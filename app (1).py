@@ -45,23 +45,19 @@ def analyze_asset(ticker):
         span = year_high - year_low
         current_price = float(df["Close"].iloc[-1])
 
-        # બેકએન્ડમાં ગણતરી ચાલુ રહેશે, પણ કિંમતો ક્યાંય બહાર દેખાશે નહીં
+        # 🔒 નવો ગુપ્ત કોડ: આંકડા સંપૂર્ણપણે ગાયબ
         levels = {
-            "Macro Boundary High (4.236)": year_low + (span * 4.236),
-            "Primary Trajectory Axis (1.618)": year_low + (span * 1.618),
-            "Equilibrium Pivot Zone (0.618)": year_low + (span * 0.618),
-            "Anchor Baseline (0.00)": year_low,
+            "Stratosphere Zone": year_low + (span * 4.236),
+            "Horizon Axis": year_low + (span * 1.618),
+            "Core Balance Node": year_low + (span * 0.618),
+            "Ground Zero": year_low,
         }
 
         short_ma = df["Close"].rolling(window=5).mean().iloc[-1]
-        if (
-            current_price > levels["Equilibrium Pivot Zone (0.618)"]
-            and current_price > short_ma
-        ):
+        if current_price > levels["Core Balance Node"] and current_price > short_ma:
             momentum = "Ascending Momentum Capable (🟢)"
         elif (
-            current_price < levels["Equilibrium Pivot Zone (0.618)"]
-            and current_price < short_ma
+            current_price < levels["Core Balance Node"] and current_price < short_ma
         ):
             momentum = "Descending Momentum Capable (🔴)"
         else:
@@ -92,14 +88,11 @@ indices_dict, index_tickers = load_data()
 selected_index = st.sidebar.selectbox(
     "Select Index Group", list(indices_dict.keys())
 )
+
+# 🔒 સાઇડબાર ફિલ્ટરમાંથી પણ આંકડા હટાવી દીધા
 filter_node = st.sidebar.selectbox(
     "Filter by Matrix Node",
-    [
-        "All Levels",
-        "Macro Boundary High (4.236)",
-        "Primary Trajectory Axis (1.618)",
-        "Equilibrium Pivot Zone (0.618)",
-    ],
+    ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"],
 )
 
 st.subheader(f"📈 Index Structure Analysis: {selected_index}")
@@ -133,7 +126,6 @@ if not df_results.empty:
     if df_final.empty:
         st.warning("આ સ્તરે હાલ કોઈ ડેટા મેચ થતો નથી.")
     else:
-        # 🔒 ફિબોનાચી પ્રાઇસની કોલમો હટાવી દીધી છે, હવે કોઈ લેવલ પકડી નહીં શકે
         st.dataframe(
             df_final[
                 ["Asset Symbol", "Current Price", "Structural Status", "Matrix Node Status"]
