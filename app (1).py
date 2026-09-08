@@ -13,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🛠️ એરર ફિક્સ: કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો (unsafe_allow_html સાથે)
+# કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો
 st.markdown(
     """
     <style>
@@ -48,7 +48,7 @@ def check_password():
 
 if check_password():
 
-    # 📥 ઇન-બિલ્ટ F&O અને હાઇ-વોલ્યુમ (>2 Lakh Daily) માસ્ટર ડેટાબેઝ
+    # 📥 ઇન-બિલ્ટ માસ્ટર લિસ્ટ
     @st.cache_data
     def load_market_universe():
         fno_stocks = [
@@ -65,7 +65,6 @@ if check_password():
             "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS",
             "ZEEL"
         ]
-        
         high_volume_nodes = [
             "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
             "DELHIVERY", "MANAPPURAM", "L&TFH", "NCC", "NYKAA", "UCOBANK", "CUB", "RAMCOCEM", "SOBHA", "SONACOMS"
@@ -135,6 +134,7 @@ if check_password():
             }
         except: return None
 
+    # 🛠️ એડવાન્સ મોડિફાઈડ ડીપ એન્જિન (આખા ૧૪+ સિક્રેટ લેવલ્સનો Whole Data ગણવા માટે)
     def analyze_deep_asset(ticker, timeframe):
         try:
             fetch_period = "5d" if timeframe == "Daily" else "3mo" if timeframe == "Weekly" else "1y"
@@ -158,11 +158,24 @@ if check_password():
                 v = int(df["Volume"].sum())
 
             span = h - l
+            
+            # 🎯 ઇમેજ મુજબના તમામ પોઝિટિવ અને નેગેટિવ સપ્રમાણ (Whole) લેવલ્સ
             levels = {
-                "Stratosphere Zone": l + (span * 4.236),
-                "Horizon Axis": l + (span * 1.618),
-                "Core Balance Node": l + (span * 0.618),
-                "Ground Zero": l,
+                "Macro Boundary High (4.236)": l + (span * 4.236),
+                "Upper Multiplier Ex (3.414)": l + (span * 3.414),
+                "Structural Variance High (2.618)": l + (span * 2.618),
+                "Confirmation Threshold Up (2.0)": l + (span * 2.0),
+                "Primary Trajectory Axis (1.618)": l + (span * 1.618),
+                "Velocity Intermission Zone (1.272)": l + (span * 1.272),
+                "Equilibrium Pivot Zone (0.618)": l + (span * 0.618),
+                "Secondary Pivot Node (0.236)": l + (span * 0.236),
+                "Anchor Baseline (0.00)": l,
+                "Retraction Buffer Zone (-0.618)": l - (span * 0.618),
+                "Extrapolated Range Lower (-1.618)": l - (span * 1.618),
+                "Confirmation Threshold Down (-2.0)": l - (span * 2.0),
+                "Structural Variance Low (-2.618)": l - (span * 2.618),
+                "Lower Multiplier Ex (-3.414)": l - (span * 3.414),
+                "Macro Boundary Low (-4.236)": l - (span * 4.236),
             }
 
             return {
@@ -179,16 +192,11 @@ if check_password():
     fno_list, high_vol_list = load_market_universe()
 
     st.sidebar.header("🎯 Filter Matrix")
-    
-    asset_class = st.sidebar.selectbox(
-        "Choose Asset Class (એસેટ કેટેગરી):", 
-        ["All F&O Heavyweights", "High Volume Node (>2 Lakh)"]
-    )
-    
+    asset_class = st.sidebar.selectbox("Choose Asset Class", ["All F&O Heavyweights", "High Volume Node (>2 Lakh)"])
     selected_index = st.sidebar.selectbox("Track Index Structure", list(index_tickers.keys()))
     filter_node = st.sidebar.selectbox("Filter by Matrix Node", ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"])
 
-    # ૧. ઇન્ડૅક્સ સ્ટ્રક્ચર ડિસ્પ્લે
+    # ૧. ઇન્ડૅક્સ ડિસ્પ્લે
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -199,20 +207,3 @@ if check_password():
 
     st.markdown("---")
 
-    # ૨. માસ્ટર કોન્સ્ટિટ્યુએન્ટ મેટ્રિક્સ
-    st.subheader(f"📋 Constituent Target Matrix")
-    stock_scan_list = constituent_groups.get(selected_index, ["RELIANCE.NS", "TCS.NS"])
-
-    results = []
-    for stock in stock_scan_list:
-        res = analyze_asset(stock)
-        if res: res["Asset Symbol"] = stock; results.append(res)
-
-    df_results = pd.DataFrame(results)
-    if not df_results.empty:
-        df_final = df_results if filter_node == "All Levels" else df_results[df_results["Matrix Node Status"].str.contains(filter_node, na=False, regex=False)]
-        st.dataframe(df_final[["Asset Symbol", "Current Price", "Structural Status", "Matrix Node Status", "Prev Open", "Prev High", "Prev Low", "Prev Close", "Prev Volume"]], use_container_width=True)
-
-    st.markdown("---")
-
-    # 🎯 ૩. એડવાન્સ સિંગલ એસેટ ડીપ એનાલિસિસ
