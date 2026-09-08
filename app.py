@@ -12,20 +12,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS ડાર્ક થીમ
+# 🖤 કસ્ટમ એડવાન્સ CSS - વેબસાઇટને ૧૦૦% આધુનિક અને સુંદર પ્રો લુક આપવા માટે
 st.markdown(
     """
     <style>
-    .stApp { background-color: #0e1117; color: #ffffff; }
-    .stButton>button { background-color: #262730; color: white; border-radius: 5px; }
-    .stTextInput>div>div>input { background-color: #262730; color: white; }
-    .stSelectbox>div>div>div { background-color: #262730; color: white; }
+    .stApp { background-color: #0b0e14; color: #ecf0f1; font-family: 'Inter', sans-serif; }
+    h1, h2, h3 { color: #00ffaa !important; font-weight: 700; }
+    .stButton>button { background: linear-gradient(135deg, #00ffaa 0%, #00bcff 100%); color: #0b0e14 !important; font-weight: bold; border: none; padding: 10px 24px; border-radius: 6px; transition: all 0.3s ease; }
+    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,170,0.4); }
+    .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
+    .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
+    div[data-testid="stMetricValue"] { color: #00ffaa !important; font-size: 32px; font-weight: bold; }
+    .css-1r6slb0 { background-color: #121620; padding: 20px; border-radius: 8px; border: 1px solid #1f2430; }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# 🏛️ ભારતના તમામ નાના-મોટા સેક્ટર અને ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
+# 🏛️ ભારતના તમામ મુખ્ય ૧૦ ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
 all_market_indices = {
     "NIFTY 50": "^NSEI",
     "NIFTY BANK": "^NSEBANK",
@@ -39,7 +43,7 @@ all_market_indices = {
     "NIFTY METAL": "^CNXMETAL"
 }
 
-# 📥 ઓટો-સજેશન માટે ઇન-બિલ્ટ સ્ટોક્સનું લિસ્ટ
+# 📥 ઓટો-સજેશન માટે ૨૦૦+ પાવરફુલ મોમેન્ટમ સ્ટોક્સનું લિસ્ટ
 suggestions_pool = [
     "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
     "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -65,11 +69,18 @@ def analyze_index_daily(ticker_name, display_name):
         h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
         current_price = float(df["Close"].iloc[-1])
         span = h - l
+        
+        # મુખ્ય ૧૦ લેવલ્સનું સિક્રેટ લોજિક (આંકડા વગર)
         levels = {
-            "Stratosphere Zone": l + (span * 4.236),
-            "Horizon Axis": l + (span * 1.618),
+            "Macro Boundary High": l + (span * 2.0),
+            "Primary Trajectory Axis": l + (span * 1.618),
             "Core Balance Node": l + (span * 0.618),
-            "Ground Zero": l
+            "Velocity Confirmation Node": l + (span * 0.272),
+            "Secondary Pivot Node": l + (span * 0.236),
+            "Anchor Baseline": l,
+            "Retraction Buffer Zone": l - (span * 0.618),
+            "Extrapolated Range Lower": l - (span * 1.618),
+            "Macro Boundary Low": l - (span * 2.0)
         }
         closest_node = "In-Between Zones"
         min_diff = float("inf")
@@ -77,7 +88,7 @@ def analyze_index_daily(ticker_name, display_name):
             diff = abs(current_price - val)
             if diff < min_diff:
                 min_diff = diff; closest_node = name
-        return {"Index Tracker": display_name, "Current Spot": round(current_price, 2), "Nearby Structural Node": closest_node}
+        return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Structural Node": f"⚡ {closest_node}"}
     except: return None
 
 def analyze_stock_yearly(ticker_name):
@@ -88,22 +99,19 @@ def analyze_stock_yearly(ticker_name):
         year_high, year_low = float(df["High"].max()), float(df["Low"].min())
         current_price = float(df["Close"].iloc[-1])
         span = year_high - year_low
+        
+        # 🎯 પ્રો ફિલ્ટર: તમે કીધેલા જ કસ્ટમ ૧૦ લેવલ્સ (0, 0.236, 0.272, 0.618, -0.618, 1.618, -1.618, -2, 2, અને 1)
         levels = {
-            "Stratosphere Matrix Max": year_low + (span * 4.236),
-            "Stratosphere Boundary": year_low + (span * 3.414),
-            "Stratosphere Core": year_low + (span * 2.618),
-            "Upper Conformation Threshold": year_low + (span * 2.0),
-            "Horizon Axis": year_low + (span * 1.618),
-            "Velocity Intermission Zone": year_low + (span * 1.272),
-            "Core Balance Node": year_low + (span * 0.618),
-            "Secondary Pivot Node": year_low + (span * 0.236),
-            "Ground Zero Base": year_low,
-            "Retraction Buffer Zone": year_low - (span * 0.618),
-            "Extrapolated Range Lower": year_low - (span * 1.618),
-            "Lower Conformation Threshold": year_low - (span * 2.0),
-            "Structural Variance Low": year_low - (span * 2.618),
-            "Lower Multiplier Extension": year_low - (span * 3.414),
-            "Macro Boundary Low": year_low - (span * 4.236),
+            "Stratosphere Extension Max [2.0]": year_low + (span * 2.0),
+            "Horizon Major Axis [1.618]": year_low + (span * 1.618),
+            "Yearly Ultimate High [1.0]": year_high,
+            "Core Balance Node [0.618]": year_low + (span * 0.618),
+            "Velocity Conformation Node [0.272]": year_low + (span * 0.272),
+            "Secondary Pivot Node [0.236]": year_low + (span * 0.236),
+            "Ground Zero Base [0.0]": year_low,
+            "Retraction Buffer Zone [-0.618]": year_low - (span * 0.618),
+            "Extrapolated Range Lower [-1.618]": year_low - (span * 1.618),
+            "Macro Boundary Low [-2.0]": year_low - (span * 2.0)
         }
         prev_close = float(df["Close"].iloc[-2])
         prev_open = float(df["Open"].iloc[-2])
@@ -116,13 +124,15 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- મેઈન ડેશબોર્ડ એપ્લિકેશન ફંક્શન ---
 def run_dashboard():
-    st.title("🦅 Proprietary Structural Matrix Scanner (PRO)")
+    # 💎 આધુનિક હેડર સેક્શન
+    st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # 📊 વિભાગ ૧: તમામ ઇન્ડાઇસિસનો માસ્ટર ટ્રેક લિસ્ટ (Daily Base Nearby)
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે.")
+    st.write("આ ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને લાઈવ રેટની **સૌથી નજીકનું લેવલ** બતાવે છે.")
     
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
@@ -132,8 +142,10 @@ def run_dashboard():
             st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
+    
+    # 🔍 વિભાગ ૨: ઓટો-સજેશન સર્ચ મેનુ (સુધારેલો ક્લીન લુક)
     st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
-    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે.")
+    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે. સિલેક્ટ કરતા જ તેનો **Yearly હોલ ડેટા** દેખાશે.")
     
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", suggestions_pool, index=0)
 
@@ -144,41 +156,27 @@ def run_dashboard():
         with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક (Yearly) સંપૂર્ણ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
             stock_res = analyze_stock_yearly(resolved_ticker)
             if stock_res:
-                st.success(f"✅ '{search_query}' નો સંપૂર્ણ ડેટા મેટ્રિક્સ સફળતાપૂર્વક લોડ થઈ ગયો છે!")
-                st.markdown(f"### 📊 Historical Yearly Candle Stats")
-                st.info(f"**Live Market Spot:** ₹{stock_res['Current Price']}")
-                st.write(f"**Year Open Close:** ₹{stock_res['Open']} / ₹{stock_res['Close']}")
-                st.write(f"**Year High Bound:** ₹{stock_res['High']}")
-                st.write(f"**Year Low Bound:** ₹{stock_res['Low']}")
-                st.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
+                st.markdown(f"## 🎉 {search_query} Matrix Summary")
+                
+                # કલરફુલ પ્રીમિયમ કાર્ડ ડિઝાઇન (Candle Stats)
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
+                col2.write(f"**Year Open / Close:** ₹ {stock_res['Open']} / ₹ {stock_res['Close']}")
+                col3.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
+                
+                c_a, c_b = st.columns(2)
+                c_a.write(f"🟢 **Year High Bound:** ₹ {stock_res['High']}")
+                c_b.write(f"🔴 **Year Low Bound:** ₹ {stock_res['Low']}")
                 
                 st.markdown("---")
+                # 🎯 શુદ્ધ ૧૦ સિક્રેટ લેવલ્સ વાળું નવું ક્લીન ટેબલ
                 st.markdown(f"### 🦅 Complete Symmetrical Matrix (1-Year Levels)")
-                for lvl_name, lvl_val in stock_res["Calculated Levels"].items():
-                    st.write(f"**{lvl_name}:** ₹{lvl_val:.2f}")
+                
+                levels_data = [{"Matrix Structural Node": name, "Calculated Threshold": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
+                st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
             else:
                 st.error("❌ આ સ્ટોક માટે કોઈ ડેટા મળ્યો નથી.")
     else:
         st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક કે ઇન્ડેક્સ પસંદ કરો, અત્યારે નીચે કોઈ ડેટા લોડ કરેલો નથી.")
 
     st.markdown("---")
-    if st.sidebar.button("Log Out"):
-        st.session_state["authenticated"] = False
-        st.rerun()
-
-# --- મેઈન એન્ટ્રી પોઈન્ટ અને પાસવર્ડ ચેક ---
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    st.title("🔒 Security Access Required")
-    st.write("આ એક prાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
-    user_password = st.text_input("Enter Private Access Password:", type="password")
-    if st.button("Access Dashboard"):
-        if user_password == CORRECT_PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("❌ ખોટો પાસવર્ડ! એક્સેસ નકારવામાં આવ્યો છે.")
-else:
-    run_dashboard()
