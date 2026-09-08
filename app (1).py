@@ -33,6 +33,7 @@ if check_password():
 
     @st.cache_data
     def load_data():
+        # 🏦 ભારતના તમામ મુખ્ય ઇન્ડાઇસિસ અને તેમના અંડરલાઇંગ સ્ટોક્સનું માસ્ટર લિસ્ટ
         indices = {
             "NIFTY 50": [
                 "RELIANCE.NS",
@@ -55,8 +56,36 @@ if check_password():
                 "PNB.NS",
                 "BANKBARODA.NS",
             ],
+            "NIFTY FINANCIAL SERVICES": [
+                "HDFCBANK.NS",
+                "ICICIBANK.NS",
+                "SBIN.NS",
+                "AXISBANK.NS",
+                "BAJFINANCE.NS",
+                "CHOLAFIN.NS",
+            ],
+            "NIFTY IT": ["TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
+            "NIFTY AUTO": [
+                "TATAMOTORS.NS",
+                "MARUTI.NS",
+                "M&M.NS",
+                "HEROMOTOCO.NS",
+                "BAJAJ-AUTO.NS",
+            ],
+            "NIFTY FMCG": ["ITC.NS", "HINDUNILVR.NS", "NESTLEIND.NS", "BRITANNIA.NS"],
+            "NIFTY PHARMA": ["SUNPHARMA.NS", "CIPLA.NS", "DRREDDY.NS", "DIVISLAB.NS"],
         }
-        index_tickers = {"NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK"}
+
+        # 🔍 ઇન્ડૅક્સના સાદા નામ અને યાહૂ ટિકર વચ્ચેનું સ્માર્ટ મેપિંગ ડિક્શનરી
+        index_tickers = {
+            "NIFTY 50": "^NSEI",
+            "NIFTY BANK": "^NSEBANK",
+            "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+            "NIFTY IT": "^CNXIT",
+            "NIFTY AUTO": "^CNXAUTO",
+            "NIFTY FMCG": "^CNXFMCG",
+            "NIFTY PHARMA": "^CNXPHARMA",
+        }
         return indices, index_tickers
 
     def analyze_asset(ticker):
@@ -257,30 +286,3 @@ if check_password():
                 "Prev Close",
                 "Prev Volume",
             ]
-            st.dataframe(df_final[display_cols], use_container_width=True)
-
-    st.markdown("---")
-
-    # 🎯 ૩. એડવાન્સ સેક્શન: સિંગલ એસેટ ડીપ મલ્ટી-ટાઈમફ્રેમ એનાલિસિસ
-    st.subheader("🎯 Single Asset Deep Analysis")
-
-    search_options = [index_tickers[selected_index]] + indices_dict[selected_index]
-
-    col_input1, col_input2 = st.columns(2)
-    with col_input1:
-        selected_asset = st.selectbox("ચોક્કસ સ્ટોક અથવા ઇન્ડૅક્સ પસંદ કરો:", search_options)
-    with col_input2:
-        selected_timeframe = st.selectbox(
-            "Select Timeframe Structure (એનાલિસિસ સમયગાળો):", ["Daily", "Weekly", "Yearly"]
-        )
-
-    if selected_asset and selected_timeframe:
-        with st.spinner(f"{selected_timeframe} ડેટા અને સિક્રેટ લેવલ્સ ગણાઈ રહ્યા છે..."):
-            deep_res = analyze_deep_asset(selected_asset, selected_timeframe)
-
-            if deep_res:
-                col_a, col_b = st.columns(2)
-
-                with col_a:
-                    st.markdown(f"### 📊 Historical {selected_timeframe} Candle Stats")
-                    st.info(f"**Live Market Spot:** ₹{deep_res['Current Price']}")
