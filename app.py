@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન અહીં લોક છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -47,8 +47,6 @@ st.markdown(
 
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-if "final_search_query" not in st.session_state:
-    st.session_state["final_search_query"] = None
 
 all_market_indices = {
     "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
@@ -86,11 +84,11 @@ def analyze_index_daily(ticker_name, display_name):
         df = clean_columns(df)
         
         target_df = df.iloc[-2]
-        h = float(target_df["High"].iloc[0] if isinstance(target_df["High"], pd.Series) else target_df["High"])
-        l = float(target_df["Low"].iloc[0] if isinstance(target_df["Low"], pd.Series) else target_df["Low"])
+        h = float(target_df["High"].iloc if isinstance(target_df["High"], pd.Series) else target_df["High"])
+        l = float(target_df["Low"].iloc if isinstance(target_df["Low"], pd.Series) else target_df["Low"])
         
         last_row = df.iloc[-1]
-        current_price = float(last_row["Close"].iloc[0] if isinstance(last_row["Close"], pd.Series) else last_row["Close"])
+        current_price = float(last_row["Close"].iloc if isinstance(last_row["Close"], pd.Series) else last_row["Close"])
         span = h - l
         
         levels = {
@@ -111,8 +109,8 @@ def analyze_stock_yearly(ticker_name):
         if df_hist.empty or len(df_hist) < 20: return None
         df_hist = clean_columns(df_hist)
         
-        year_high = float(df_hist["High"].max().iloc[0] if isinstance(df_hist["High"].max(), pd.Series) else df_hist["High"].max())
-        year_low = float(df_hist["Low"].min().iloc[0] if isinstance(df_hist["Low"].min(), pd.Series) else df_hist["Low"].min())
+        year_high = float(df_hist["High"].max().iloc if isinstance(df_hist["High"].max(), pd.Series) else df_hist["High"].max())
+        year_low = float(df_hist["Low"].min().iloc if isinstance(df_hist["Low"].min(), pd.Series) else df_hist["Low"].min())
         span = year_high - year_low
         
         df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
@@ -122,12 +120,12 @@ def analyze_stock_yearly(ticker_name):
         t_row = df_today.iloc[-1]
         p_row = df_today.iloc[-2]
         
-        current_price = float(t_row["Close"].iloc[0] if isinstance(t_row["Close"], pd.Series) else t_row["Close"])
-        today_open = float(t_row["Open"].iloc[0] if isinstance(t_row["Open"], pd.Series) else t_row["Open"])
-        today_high = float(t_row["High"].iloc[0] if isinstance(t_row["High"], pd.Series) else t_row["High"])
-        today_low = float(t_row["Low"].iloc[0] if isinstance(t_row["Low"], pd.Series) else t_row["Low"])
-        prev_close = float(p_row["Close"].iloc[0] if isinstance(p_row["Close"], pd.Series) else p_row["Close"])
-        today_volume = int(t_row["Volume"].iloc[0] if isinstance(t_row["Volume"], pd.Series) else t_row["Volume"])
+        current_price = float(t_row["Close"].iloc if isinstance(t_row["Close"], pd.Series) else t_row["Close"])
+        today_open = float(t_row["Open"].iloc if isinstance(t_row["Open"], pd.Series) else t_row["Open"])
+        today_high = float(t_row["High"].iloc if isinstance(t_row["High"], pd.Series) else t_row["High"])
+        today_low = float(t_row["Low"].iloc if isinstance(t_row["Low"], pd.Series) else t_row["Low"])
+        prev_close = float(p_row["Close"].iloc if isinstance(p_row["Close"], pd.Series) else p_row["Close"])
+        today_volume = int(t_row["Volume"].iloc if isinstance(t_row["Volume"], pd.Series) else t_row["Volume"])
         
         raw_levels = {
             "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
@@ -135,7 +133,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -150,7 +148,7 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- મુખ્ય કંટ્રોલ ફ્લો ---
+# --- મુખ્ય ગેઇટવે કંટ્રોલ ફ્લો ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -159,9 +157,11 @@ if not st.session_state["authenticated"]:
         if user_password == CORRECT_PASSWORD:
             st.session_state["authenticated"] = True
             st.rerun()
-        else: st.error("❌ ખોટો પાસવર્ડ!")
+        else:
+            st.error("❌ ખોટો પાસવર્ડ!")
 else:
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     st.sidebar.subheader("🤖 Connection Diagnostics")
@@ -171,12 +171,15 @@ else:
         else: st.sidebar.error("❌ બોટ સ્ટાર્ટ કરો.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
-        index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
-        if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-        else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
+    index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
+    if len(index_results) > 0:
+        st.dataframe(pd.DataFrame(index_results), use_container_width=True)
+    else:
+        st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
-    st.subheader("🔍 Asset Search Menu (With Suggestions)")
+    st.subheader("🔍 Asset Search Menu")
 
-    def handle_selectbox_change():
+    # 🛠️ એરર ફિક્સ: ઓટો-રીસેટના જટિલ handle_change ફંક્શનને હટાવીને સ્ટેબલ સેશન લોજિક કરી દીધું
+    user_choice = st.selectbox(
+        "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:",
