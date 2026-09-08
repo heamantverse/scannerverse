@@ -6,8 +6,25 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-st.set_page_config(layout="wide")
+# 🖤 ૧. વેબસાઇટને કાયમી ડાર્ક મોડ અને વાઇડ લેઆઉટમાં સેટ કરવી
+st.set_page_config(
+    page_title="Proprietary Matrix Scanner",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
+# કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો
+st.markdown(
+    """
+    <style>
+    .stApp { background-color: #0e1117; color: #ffffff; }
+    .stButton>button { background-color: #262730; color: white; border-radius: 5px; }
+    .stTextInput>div>div>input { background-color: #262730; color: white; }
+    .stSelectbox>div>div>div { background-color: #262730; color: white; }
+    </style>
+    """,
+    unsafe_html=True
+)
 
 # --- લૉગિન સિસ્ટમ ---
 def check_password():
@@ -31,83 +48,59 @@ def check_password():
 
 if check_password():
 
-    # 📥 ઓટોમેટિક આખા NSE માર્કેટનું ઓફિશિયલ લિસ્ટ ડાઉનલોડ કરવું
+    # 📥 ઇન-બિલ્ટ F&O અને હાઇ-વોલ્યુમ (>2 Lakh Daily) માસ્ટર ડેટાબેઝ
     @st.cache_data
-    def load_all_nse_symbols():
-        try:
-            # સીધું NSE ના સર્વર પરથી તમામ ૨,૨૦૦+ સ્ટોક્સનું લિસ્ટ રીડ કરવું
-            url = "https://nseindia.com"
-            df_nse = pd.read_csv(url)
-            symbols = df_nse["SYMBOL"].tolist()
-            return symbols
-        except:
-            # જો કોઈ કારણસર લિંક ડાઉનલોડ ન થાય તો બેકઅપ લિસ્ટ
-            return [
-                "RELIANCE",
-                "TCS",
-                "INFY",
-                "SBIN",
-                "HDFCBANK",
-                "ICICIBANK",
-                "TATAMOTORS",
-            ]
+    def load_market_universe():
+        # તમામ મુખ્ય F&O લિક્વિડ સ્ટોક્સ
+        fno_stocks = [
+            "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
+            "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
+            "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
+            "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
+            "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
+            "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
+            "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
+            "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
+            "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+            "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "TATACOMM",
+            "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS",
+            "ZEEL"
+        ]
+        
+        # હાઇ-વોલ્યુમ ટ્રેડિંગ સ્ટોક્સ (ડેઇલી ૨ લાખથી વધુ વોલ્યુમ વાળા સ્મોલ/મિડકેપ)
+        high_volume_nodes = [
+            "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
+            "DELHIVERY", "MANAPPURAM", "L&TFH", "NCC", "NYKAA", "UCOBANK", "CUB", "RAMCOCEM", "SOBHA", "SONACOMS"
+        ]
+        
+        return fno_stocks, high_volume_nodes
 
     @st.cache_data
     def load_indices_config():
-        # 🏦 ભારતના તમામ નાના-મોટા સેક્ટર અને ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
         index_mapping = {
             "NIFTY 50": "^NSEI",
             "NIFTY BANK": "^NSEBANK",
             "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
-            "NIFTY MIDCAP 50": "^CRSMID",
-            "NIFTY SMALLCAP 50": "^CNXSMALL",
             "NIFTY IT": "^CNXIT",
             "NIFTY AUTO": "^CNXAUTO",
             "NIFTY FMCG": "^CNXFMCG",
             "NIFTY PHARMA": "^CNXPHARMA",
             "NIFTY METAL": "^CNXMETAL",
-            "NIFTY INFRA": "^CNXINFRA",
-            "NIFTY ENERGY": "^CNXENERGY",
-            "NIFTY COMMODITIES": "^CNXCOMMODITIES",
-            "NIFTY REALTY": "^CNXREALTY",
-            "NIFTY MEDIA": "^CNXMEDIA",
         }
-        # ટેબલ ડિસ્પ્લે માટે ટોપ ૧૦ લિક્વિડ સ્ટોક્સનું ગ્રુપિંગ (સર્વર ફાસ્ટ રાખવા)
+        # ડેશબોર્ડ ક્વિક ટ્રેક લિસ્ટ
         constituent_groups = {
-            "NIFTY 50": [
-                "RELIANCE.NS",
-                "TCS.NS",
-                "HDFCBANK.NS",
-                "ICICIBANK.NS",
-                "INFY.NS",
-                "BHARTIARTL.NS",
-                "SBIN.NS",
-                "ITC.NS",
-                "HINDUNILVR.NS",
-                "LT.NS",
-            ],
-            "NIFTY BANK": [
-                "SBIN.NS",
-                "HDFCBANK.NS",
-                "ICICIBANK.NS",
-                "AXISBANK.NS",
-                "KOTAKBANK.NS",
-                "PNB.NS",
-                "BANKBARODA.NS",
-            ],
+            "NIFTY 50": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "SBIN.NS"],
+            "NIFTY BANK": ["SBIN.NS", "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS"]
         }
         return index_mapping, constituent_groups
 
     def analyze_asset(ticker):
         try:
             df = yf.download(ticker, period="1y", auto_adjust=True, progress=False)
-            if df.empty or len(df) < 20:
-                return None
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if df.empty or len(df) < 20: return None
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
 
-            year_high = float(df["High"].max())
-            year_low = float(df["Low"].min())
+            year_high, year_low = float(df["High"].max()), float(df["Low"].min())
             span = year_high - year_low
             current_price = float(df["Close"].iloc[-1])
 
@@ -119,15 +112,9 @@ if check_password():
             }
 
             short_ma = df["Close"].rolling(window=5).mean().iloc[-1]
-            if (
-                current_price > levels["Core Balance Node"]
-                and current_price > short_ma
-            ):
+            if current_price > levels["Core Balance Node"] and current_price > short_ma:
                 momentum = "Ascending Momentum Capable (🟢)"
-            elif (
-                current_price < levels["Core Balance Node"]
-                and current_price < short_ma
-            ):
+            elif current_price < levels["Core Balance Node"] and current_price < short_ma:
                 momentum = "Descending Momentum Capable (🔴)"
             else:
                 momentum = "Consolidation Node (🟡)"
@@ -137,8 +124,7 @@ if check_password():
             for name, val in levels.items():
                 diff = abs(current_price - val)
                 if diff < min_diff:
-                    min_diff = diff
-                    closest_node = name
+                    min_diff = diff; closest_node = name
 
             prev_close = float(df["Close"].iloc[-2])
             prev_open = float(df["Open"].iloc[-2])
@@ -147,102 +133,68 @@ if check_password():
             prev_volume = int(df["Volume"].iloc[-2])
 
             return {
-                "Current Price": round(current_price, 2),
-                "Structural Status": momentum,
-                "Matrix Node Status": closest_node,
-                "Prev Close": round(prev_close, 2),
-                "Prev Open": round(prev_open, 2),
-                "Prev High": round(prev_high, 2),
-                "Prev Low": round(prev_low, 2),
-                "Prev Volume": prev_volume,
-                "52W High": round(year_high, 2),
-                "52W Low": round(year_low, 2),
+                "Current Price": round(current_price, 2), "Structural Status": momentum, "Matrix Node Status": closest_node,
+                "Prev Close": round(prev_close, 2), "Prev Open": round(prev_open, 2), "Prev High": round(prev_high, 2),
+                "Prev Low": round(prev_low, 2), "Prev Volume": prev_volume
             }
-        except:
-            return None
+        except: return None
 
     def analyze_deep_asset(ticker, timeframe):
         try:
-            if timeframe == "Daily":
-                fetch_period = "5d"
-            elif timeframe == "Weekly":
-                fetch_period = "3mo"
-            else:
-                fetch_period = "1y"
-
+            fetch_period = "5d" if timeframe == "Daily" else "3mo" if timeframe == "Weekly" else "1y"
             df = yf.download(ticker, period=fetch_period, auto_adjust=True, progress=False)
-            if df.empty:
-                return None
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if df.empty: return None
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
 
             current_price = float(df["Close"].iloc[-1])
 
             if timeframe == "Daily":
                 target_df = df.iloc[-2]
-                o = float(target_df["Open"])
-                h = float(target_df["High"])
-                l = float(target_df["Low"])
-                c = float(target_df["Close"])
+                o, h, l, c = float(target_df["Open"]), float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
                 v = int(target_df["Volume"])
-                high_bound, low_bound = h, l
             elif timeframe == "Weekly":
-                df_weekly = df.resample("W").agg(
-                    {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
-                )
+                df_weekly = df.resample("W").agg({"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"})
                 target_df = df_weekly.iloc[-2]
-                o = float(target_df["Open"])
-                h = float(target_df["High"])
-                l = float(target_df["Low"])
-                c = float(target_df["Close"])
+                o, h, l, c = float(target_df["Open"]), float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
                 v = int(target_df["Volume"])
-                high_bound, low_bound = h, l
             else:
-                o = float(df["Open"].iloc[0])
-                h = float(df["High"].max())
-                l = float(df["Low"].min())
-                c = float(df["Close"].iloc[-1])
+                o, h, l, c = float(df["Open"].iloc[0]), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
                 v = int(df["Volume"].sum())
-                high_bound, low_bound = h, l
 
-            span = high_bound - low_bound
+            span = h - l
             levels = {
-                "Stratosphere Zone": low_bound + (span * 4.236),
-                "Horizon Axis": low_bound + (span * 1.618),
-                "Core Balance Node": low_bound + (span * 0.618),
-                "Ground Zero": low_bound,
+                "Stratosphere Zone": l + (span * 4.236),
+                "Horizon Axis": l + (span * 1.618),
+                "Core Balance Node": l + (span * 0.618),
+                "Ground Zero": l,
             }
 
             return {
-                "Open": round(o, 2),
-                "High": round(h, 2),
-                "Low": round(l, 2),
-                "Close": round(c, 2),
-                "Volume": v,
-                "Current Price": round(current_price, 2),
-                "Calculated Levels": levels,
+                "Open": round(o, 2), "High": round(h, 2), "Low": round(l, 2), "Close": round(c, 2),
+                "Volume": v, "Current Price": round(current_price, 2), "Calculated Levels": levels
             }
-        except:
-            return None
+        except: return None
 
-    # --- મેઈન ડેશબોર્ડ યુઆઈ ---
-    st.title("🦅 Proprietary Structural Matrix Scanner")
+    # --- મેઈન યુઆઈ ---
+    st.title("🦅 Proprietary Structural Matrix Scanner (PRO)")
     st.markdown("---")
 
     index_tickers, constituent_groups = load_indices_config()
-    nse_symbols_list = load_all_nse_symbols()
+    fno_list, high_vol_list = load_market_universe()
 
-    # ડાબી બાજુનું સેક્ટર સિલેક્શન (હવે આમાં બધા જ સેક્ટર ઇન્ડૅક્સ આવી ગયા)
-    selected_index = st.sidebar.selectbox(
-        "Select Index Group (મેઈન ટ્રેક લિસ્ટ)", list(index_tickers.keys())
+    # 🎛️ ડાબી બાજુનું ફિલ્ટર સેક્શન
+    st.sidebar.header("🎯 Filter Matrix")
+    
+    # 💥 નવું એસેટ ક્લાસ ફિલ્ટર (F&O vs High Volume)
+    asset_class = st.sidebar.selectbox(
+        "Choose Asset Class (એસેટ કેટેગરી):", 
+        ["All F&O Heavyweights", "High Volume Node (>2 Lakh)"]
     )
+    
+    selected_index = st.sidebar.selectbox("Track Index Structure", list(index_tickers.keys()))
+    filter_node = st.sidebar.selectbox("Filter by Matrix Node", ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"])
 
-    filter_node = st.sidebar.selectbox(
-        "Filter by Matrix Node",
-        ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"],
-    )
-
-    # ૧. પસંદ કરેલા ઇન્ડૅક્સનું એનાલિસિસ બતાવો
+    # ૧. ઇન્ડૅક્સ સ્ટ્રક્ચર ડિસ્પ્લે
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -251,31 +203,17 @@ if check_password():
         c2.write(f"**Structural Status:** {idx_res['Structural Status']}")
         c3.write(f"**Matrix Node Status:** {idx_res['Matrix Node Status']}")
 
-        st.markdown("**Index Previous Day Stats:**")
-        idx_stats = pd.DataFrame(
-            [
-                {
-                    "Open": idx_res["Prev Open"],
-                    "High": idx_res["Prev High"],
-                    "Low": idx_res["Prev Low"],
-                    "Close": idx_res["Prev Close"],
-                    "Volume": f"{idx_res['Prev Volume']:,}",
-                }
-            ]
-        )
-        st.table(idx_stats)
-
     st.markdown("---")
 
-    # ૨. માર્કેટ કોન્સ્ટિટ્યુએન્ટ મેટ્રિક્સ (ટેબલ લોડિંગ)
+    # ૨. માસ્ટર કોન્સ્ટિટ્યુએન્ટ મેટ્રિક્સ
     st.subheader(f"📋 Constituent Target Matrix")
-    # જો આ સેક્ટરનું સ્ટોક લિસ્ટ મેપ્ડ હોય તો તે લોડ થશે, નહિતર ટોપ ૧૦ બેકઅપ શેર દેખાશે
-    stock_scan_list = constituent_groups.get(
-        selected_index, ["RELIANCE.NS", "TCS.NS", "SBIN.NS", "HDFCBANK.NS"]
-    )
+    stock_scan_list = constituent_groups.get(selected_index, ["RELIANCE.NS", "TCS.NS"])
 
     results = []
     for stock in stock_scan_list:
         res = analyze_asset(stock)
-        if res:
-            res["Asset Symbol"] = stock
+        if res: res["Asset Symbol"] = stock; results.append(res)
+
+    df_results = pd.DataFrame(results)
+    if not df_results.empty:
+        df_final = df_results if filter_node == "All Levels" else df_results[df_results["Matrix Node Status"].str.contains(filter_node, na=False, regex=False)]
