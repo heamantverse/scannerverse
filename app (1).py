@@ -3,13 +3,13 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 🔒 તમારો નવો પાવરફુલ સિક્રેટ પાસવર્ડ
+# 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
 st.set_page_config(layout="wide")
 
 
-# --- લૉગિન સિસ્ટમ ફંક્શન ---
+# --- લૉગિન સિસ્ટમ ---
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
@@ -17,8 +17,6 @@ def check_password():
     if not st.session_state["authenticated"]:
         st.title("🔒 Security Access Required")
         st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
-
-        # પાસવર્ડ ઇનપુટ બોક્સ
         user_password = st.text_input("Enter Private Access Password:", type="password")
 
         if st.button("Access Dashboard"):
@@ -31,7 +29,6 @@ def check_password():
     return True
 
 
-# પાસવર્ડ વેરિફિકેશન પછી જ મેઈન ડેશબોર્ડ ખૂલશે
 if check_password():
 
     @st.cache_data
@@ -62,6 +59,7 @@ if check_password():
         index_tickers = {"NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK"}
         return indices, index_tickers
 
+    # કોર એનાલિસિસ ફંક્શન (માસ્ટર ટેબલ માટે - બેકએન્ડ હંમેશા 1y રેન્જ રાખશે સેફ્ટી માટે)
     def analyze_asset(ticker):
         try:
             df = yf.download(ticker, period="1y", auto_adjust=True, progress=False)
@@ -70,7 +68,8 @@ if check_password():
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
 
-            year_high, year_low = float(df["High"].max()), float(df["Low"].min())
+            year_high = float(df["High"].max())
+            year_low = float(df["Low"].min())
             span = year_high - year_low
             current_price = float(df["Close"].iloc[-1])
 
@@ -103,10 +102,98 @@ if check_password():
                     min_diff = diff
                     closest_node = name
 
+            prev_close = float(df["Close"].iloc[-2])
+            prev_open = float(df["Open"].iloc[-2])
+            prev_high = float(df["High"].iloc[-2])
+            prev_low = float(df["Low"].iloc[-2])
+            prev_volume = int(df["Volume"].iloc[-2])
+
             return {
                 "Current Price": round(current_price, 2),
                 "Structural Status": momentum,
                 "Matrix Node Status": closest_node,
+                "Prev Close": round(prev_close, 2),
+                "Prev Open": round(prev_open, 2),
+                "Prev High": round(prev_high, 2),
+                "Prev Low": round(prev_low, 2),
+                "Prev Volume": prev_volume,
+                "52W High": round(year_high, 2),
+                "52W Low": round(year_low, 2),
+            }
+        except:
+            return None
+
+    # 🛠️ મલ્ટી-ટાઈમફ્રેમ એનાલિસિસ એન્જિન (ડીપ સેક્શન માટે)
+    def analyze_deep_asset(ticker, timeframe):
+        try:
+            # ટાઈમફ્રેમ મુજબ યોગ્ય પિરિયડ નક્કી કરવો
+            if timeframe == "Daily":
+                fetch_period = "5d"  # લિસ્ટિંગમાંથી છેલ્લો દિવસ કાઢવા માટે
+            elif timeframe == "Weekly":
+                fetch_period = "3mo"
+            else:  # Yearly
+                fetch_period = "1y"
+
+            df = yf.download(ticker, period=fetch_period, auto_adjust=True, progress=False)
+            if df.empty:
+                return None
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+
+            current_price = float(df["Close"].iloc[-1])
+
+            # રેઝામ્પલિંગ ડેટા (Timeframe Logic Conversion)
+            if timeframe == "Daily":
+                # છેલ્લો પૂરો થયેલો દિવસ એટલે છેલ્લેથી બીજો રેકોર્ડ (-2)
+                target_df = df.iloc[-2]
+                o, h, l, c = (
+                    target_df["Open"],
+                    target_df["High"],
+                    target_df["Low"],
+                    target_df["Close"],
+                )
+                v = int(target_df["Volume"])
+                high_bound, low_bound = h, l
+            elif timeframe == "Weekly":
+                # છેલ્લા પૂરા થયેલા વીકની કેન્ડલ
+                df_weekly = df.resample("W").agg(
+                    {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
+                )
+                target_df = df_weekly.iloc[-2]
+                o, h, l, c = (
+                    target_df["Open"],
+                    target_df["High"],
+                    target_df["Low"],
+                    target_df["Close"],
+                )
+                v = int(target_df["Volume"])
+                high_bound, low_bound = h, l
+            else:
+                # Yearly (છેલ્લા ૧ વર્ષનો મેક્સિમમ ડેટા)
+                o = float(df["Open"].iloc[0])
+                h = float(df["High"].max())
+                l = float(df["Low"].min())
+                c = float(df["Close"].iloc[-1])
+                v = int(df["Volume"].sum())
+                high_bound, low_bound = h, l
+
+            # પસંદ કરેલા ટાઈમફ્રેમના હાઇ-લો પરથી ફિબોનાચી લેવલ્સ ગણવા
+            span = high_bound - low_bound
+            levels = {
+                "Stratosphere Zone": low_bound + (span * 4.236),
+                "Horizon Axis": low_bound + (span * 1.618),
+                "Core Balance Node": low_bound + (span * 0.618),
+                "Ground Zero": low_bound,
+            }
+
+            return {
+                "Open": round(o, 2),
+                "High": round(h, 2),
+                "Low": round(l, 2),
+                "Close": round(c, 2),
+                "Volume": v,
+                "Current Price": round(current_price, 2),
+                "Calculated Levels": levels,
             }
         except:
             return None
@@ -125,6 +212,7 @@ if check_password():
         ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"],
     )
 
+    # ૧. ઇન્ડૅક્સ સ્ટ್ರક્ચર ડિસ્પ્લે
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -133,8 +221,24 @@ if check_password():
         c2.write(f"**Structural Status:** {idx_res['Structural Status']}")
         c3.write(f"**Matrix Node Status:** {idx_res['Matrix Node Status']}")
 
+        st.markdown("**Index Previous Day Stats:**")
+        idx_stats = pd.DataFrame(
+            [
+                {
+                    "Open": idx_res["Prev Open"],
+                    "High": idx_res["Prev High"],
+                    "Low": idx_res["Prev Low"],
+                    "Close": idx_res["Prev Close"],
+                    "Volume": f"{idx_res['Prev Volume']:,}",
+                }
+            ]
+        )
+        st.table(idx_stats)
+
     st.markdown("---")
-    st.subheader(f"📋 Constituent Target Matrix")
+
+    # ૨. માસ્ટર ડેટા ટેબલ (સેફ મોડ)
+    st.subheader(f"📋 Constituent Target Matrix (With Previous Day Stats)")
     results = []
     for stock in indices_dict[selected_index]:
         res = analyze_asset(stock)
@@ -156,24 +260,27 @@ if check_password():
         if df_final.empty:
             st.warning("આ સ્તરે હાલ કોઈ ડેટા મેચ થતો નથી.")
         else:
-            st.dataframe(
-                df_final[
-                    [
-                        "Asset Symbol",
-                        "Current Price",
-                        "Structural Status",
-                        "Matrix Node Status",
-                    ]
-                ],
-                use_container_width=True,
-            )
+            display_cols = [
+                "Asset Symbol",
+                "Current Price",
+                "Structural Status",
+                "Matrix Node Status",
+                "Prev Open",
+                "Prev High",
+                "Prev Low",
+                "Prev Close",
+                "Prev Volume",
+            ]
+            st.dataframe(df_final[display_cols], use_container_width=True)
 
     st.markdown("---")
-    st.caption(
-        "⚠️ Disclaimer: Educational proprietary structural matrix. Not SEBI registered."
-    )
 
-    # સાઇડબાર લોગઆઉટ બટન
-    if st.sidebar.button("Log Out"):
-        st.session_state["authenticated"] = False
-        st.rerun()
+    # 🎯 ૩. એડવાન્સ સેક્શન: સિંગલ એસેટ ડીપ મલ્ટી-ટાઈમફ્રેમ એનાલિસિસ
+    st.subheader("🎯 Single Asset Deep Analysis")
+
+    search_options = [index_tickers[selected_index]] + indices_dict[
+        selected_index
+    ]
+
+    col_input1, col_input2 = st.columns(2)
+    with col_input1:
