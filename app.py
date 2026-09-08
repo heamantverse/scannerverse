@@ -28,11 +28,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- કાયમી સેશન મેમરી સેટઅપ (ડેટા બચાવવા માટે) ---
+# --- સેશન સ્ટેટ પરમેનન્ટ મેમરી (કન્ફ્લિક્ટ અટકાવવા માટે) ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-if "keep_my_stock" not in st.session_state:
-    st.session_state["keep_my_stock"] = None
+if "final_search_query" not in st.session_state:
+    st.session_state["final_search_query"] = None
 
 # 🏛️ માર્કેટ ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
 all_market_indices = {
@@ -40,23 +40,6 @@ all_market_indices = {
     "NIFTY MIDCAP 50": "^CRSMID", "NIFTY SMALLCAP 50": "^CNXSMALL", "NIFTY IT": "^CNXIT",
     "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
 }
-
-# 📥 સજેશન પૂલ લિસ્ટ
-suggestions_pool = [
-    "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
-    "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
-    "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
-    "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
-    "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
-    "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
-    "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
-    "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
-    "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
-    "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
-    "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
-    "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
-]
 
 def analyze_index_daily(ticker_name, display_name):
     try:
@@ -97,23 +80,15 @@ def analyze_stock_yearly(ticker_name):
         today_volume = int(df_today["Volume"].iloc[-1])
         
         raw_levels = {
-            "Sky Target 3": year_low + (span * 2.0),
-            "Sky Target 2": year_low + (span * 1.618),
-            "Sky Target 1": year_high,
-            "Center Balance Zone": year_low + (span * 0.618),
-            "Floor Support 1": year_low + (span * 0.272),
-            "Floor Support 2": year_low + (span * 0.236),
-            "Base Zero": year_low,
-            "Floor Support 3": year_low - (span * 0.618),
-            "Floor Support 4": year_low - (span * 1.618),
-            "Macro Boundary Low": year_low - (span * 2.0)
+            "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
+            "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
+            "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
         sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
-            if current_price >= val:
-                split_idx = i + 1
+            if current_price >= val: split_idx = i + 1
                 
         start_idx = max(0, split_idx - 2)
         end_idx = min(len(sorted_levels), split_idx + 3)
@@ -125,7 +100,7 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- ગેટવે એન્ટ્રી ---
+# --- સિક્યોરિટી ચેક ગેટવે ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -140,6 +115,7 @@ else:
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # ૧. ઓલ ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
@@ -147,29 +123,31 @@ else:
         else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
-    st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
-    
-    # 🎯 સ્માર્ટ ફિક્સ: ડ્રોપડાઉન સિલેક્શન થતાં જ કાયમી કી 'keep_my_stock' માં ડેટા સ્ટોર થશે
-    user_choice = st.selectbox(
-        "સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", 
-        suggestions_pool, 
-        index=0
+    st.subheader("🔍 Asset Search Menu (Smart Auto-Reset)")
+
+    # 🛠️ ઓટો-બ્લેન્ક ટેક્સ્ટ ઇનપુટ બોક્સ લોજિક
+    def handle_search_clear():
+        typed_val = st.session_state.text_search_input
+        if typed_val.strip() != "":
+            st.session_state["final_search_query"] = typed_val.strip()
+            # ટેક્સ્ટ બોક્સને કાયમી માટે ક્લીન (Blank) કરી દેવું
+            st.session_state.text_search_input = ""
+
+    # આ વ્હાઇટ બોક્સ સર્ચ કર્યા પછી આપોઆપ તરત જ ખાલી થઈ જશે!
+    st.text_input(
+        "સ્ટોક અથવા ઇન્ડેક્સનું નામ લખો (e.g., TCS, SUZLON, NIFTY 50) અને Enter દબાવો:",
+        key="text_search_input",
+        on_change=handle_search_clear
     )
 
-    # જો યુઝર નવું નામ પસંદ કરે, તો તેને કાયમી લોક કરો
-    if user_choice and user_choice != "SELECT STOCK":
-        st.session_state["keep_my_stock"] = user_choice
-        # સ્માર્ટ રીસેટ: સર્ચ બોક્સને બેકએન્ડમાં ખાલી કરવા છતાં નીચે ડેટા લાઈવ રાખવો
-        st.write("<script>document.getElementsByTagName('select')[0].value='SELECT STOCK'</script>", unsafe_allow_html=True)
-
-    # ફાઇનલ રેન્ડરિંગ ટાર્ગેટ
-    search_query_active = st.session_state["keep_my_stock"]
+    # બેકએન્ડમાં ડેટા સેફ રહેશે અને નીચે પ્રિન્ટ થશે
+    search_query_active = st.session_state["final_search_query"]
 
     if search_query_active:
         search_query = search_query_active.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        with st.spinner(f"'{resolved_ticker}' નો લાઈવ માર્કેટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        with st.spinner(f"'{resolved_ticker}' નો રિયલ-ટાઇમ માર્કેટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
             stock_res = analyze_stock_yearly(resolved_ticker)
             if stock_res:
                 st.markdown(f"## 🎉 {search_query} Matrix Summary")
@@ -179,3 +157,29 @@ else:
                 col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
                 col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
                 st.write(f"🗒️ **Previous Close:** ₹ {stock_res['Prev Close']} | **Today's Volume:** {stock_res['Volume']:,}")
+                
+                st.markdown("---")
+                st.markdown(f"### 🦅 Symmetrical Price Matrix")
+                
+                # 🎯 ૩ ઉપર અને ૨ નીચે લેવલ્સ નામ, કિંમત અને ટકાવારી (%) અંતર સાથે ૧૦૦% દેખાશે
+                levels_list = []
+                current_spot = stock_res['Current Price']
+                for name, val in stock_res["Calculated Levels"].items():
+                    distance_pct = ((val - current_spot) / current_spot) * 100
+                    direction_sign = "+" if distance_pct >= 0 else ""
+                    levels_list.append({
+                        "Easy Structural Level": name,
+                        "Calculated Price": f"₹ {val:,.2f}",
+                        "Distance from Live Price": f"{direction_sign}{distance_pct:.2f} %"
+                    })
+                st.dataframe(pd.DataFrame(levels_list), use_container_width=True)
+            else:
+                st.error(f"❌ '{user_search}' માટે કોઈ ડેટા મળ્યો નથી. કૃપા કરીને સાચો સિમ્બોલ ટાઈપ કરો.")
+    else:
+        st.info("💡 ઉપર સર્ચ બોક્સમાં કોઈ સ્ટોકનું નામ લખીને Enter દબાવો.")
+
+    st.markdown("---")
+    if st.sidebar.button("Log Out"):
+        st.session_state["authenticated"] = False
+        st.session_state["final_search_query"] = None
+        st.rerun()
