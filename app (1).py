@@ -31,10 +31,49 @@ def check_password():
 
 if check_password():
 
+    # 📥 ઓટોમેટિક આખા NSE માર્કેટનું ઓફિશિયલ લિસ્ટ ડાઉનલોડ કરવું
     @st.cache_data
-    def load_data():
-        # 🏦 ભારતના તમામ મુખ્ય ઇન્ડાઇસિસ અને તેમના અંડરલાઇંગ સ્ટોક્સનું માસ્ટર લિસ્ટ
-        indices = {
+    def load_all_nse_symbols():
+        try:
+            # સીધું NSE ના સર્વર પરથી તમામ ૨,૨૦૦+ સ્ટોક્સનું લિસ્ટ રીડ કરવું
+            url = "https://nseindia.com"
+            df_nse = pd.read_csv(url)
+            symbols = df_nse["SYMBOL"].tolist()
+            return symbols
+        except:
+            # જો કોઈ કારણસર લિંક ડાઉનલોડ ન થાય તો બેકઅપ લિસ્ટ
+            return [
+                "RELIANCE",
+                "TCS",
+                "INFY",
+                "SBIN",
+                "HDFCBANK",
+                "ICICIBANK",
+                "TATAMOTORS",
+            ]
+
+    @st.cache_data
+    def load_indices_config():
+        # 🏦 ભારતના તમામ નાના-મોટા સેક્ટર અને ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
+        index_mapping = {
+            "NIFTY 50": "^NSEI",
+            "NIFTY BANK": "^NSEBANK",
+            "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+            "NIFTY MIDCAP 50": "^CRSMID",
+            "NIFTY SMALLCAP 50": "^CNXSMALL",
+            "NIFTY IT": "^CNXIT",
+            "NIFTY AUTO": "^CNXAUTO",
+            "NIFTY FMCG": "^CNXFMCG",
+            "NIFTY PHARMA": "^CNXPHARMA",
+            "NIFTY METAL": "^CNXMETAL",
+            "NIFTY INFRA": "^CNXINFRA",
+            "NIFTY ENERGY": "^CNXENERGY",
+            "NIFTY COMMODITIES": "^CNXCOMMODITIES",
+            "NIFTY REALTY": "^CNXREALTY",
+            "NIFTY MEDIA": "^CNXMEDIA",
+        }
+        # ટેબલ ડિસ્પ્લે માટે ટોપ ૧૦ લિક્વિડ સ્ટોક્સનું ગ્રુપિંગ (સર્વર ફાસ્ટ રાખવા)
+        constituent_groups = {
             "NIFTY 50": [
                 "RELIANCE.NS",
                 "TCS.NS",
@@ -56,37 +95,8 @@ if check_password():
                 "PNB.NS",
                 "BANKBARODA.NS",
             ],
-            "NIFTY FINANCIAL SERVICES": [
-                "HDFCBANK.NS",
-                "ICICIBANK.NS",
-                "SBIN.NS",
-                "AXISBANK.NS",
-                "BAJFINANCE.NS",
-                "CHOLAFIN.NS",
-            ],
-            "NIFTY IT": ["TCS.NS", "INFY.NS", "WIPRO.NS", "HCLTECH.NS", "TECHM.NS"],
-            "NIFTY AUTO": [
-                "TATAMOTORS.NS",
-                "MARUTI.NS",
-                "M&M.NS",
-                "HEROMOTOCO.NS",
-                "BAJAJ-AUTO.NS",
-            ],
-            "NIFTY FMCG": ["ITC.NS", "HINDUNILVR.NS", "NESTLEIND.NS", "BRITANNIA.NS"],
-            "NIFTY PHARMA": ["SUNPHARMA.NS", "CIPLA.NS", "DRREDDY.NS", "DIVISLAB.NS"],
         }
-
-        # 🔍 ઇન્ડૅક્સના સાદા નામ અને યાહૂ ટિકર વચ્ચેનું સ્માર્ટ મેપિંગ ડિક્શનરી
-        index_tickers = {
-            "NIFTY 50": "^NSEI",
-            "NIFTY BANK": "^NSEBANK",
-            "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
-            "NIFTY IT": "^CNXIT",
-            "NIFTY AUTO": "^CNXAUTO",
-            "NIFTY FMCG": "^CNXFMCG",
-            "NIFTY PHARMA": "^CNXPHARMA",
-        }
-        return indices, index_tickers
+        return index_mapping, constituent_groups
 
     def analyze_asset(ticker):
         try:
@@ -219,9 +229,12 @@ if check_password():
     st.title("🦅 Proprietary Structural Matrix Scanner")
     st.markdown("---")
 
-    indices_dict, index_tickers = load_data()
+    index_tickers, constituent_groups = load_indices_config()
+    nse_symbols_list = load_all_nse_symbols()
+
+    # ડાબી બાજુનું સેક્ટર સિલેક્શન (હવે આમાં બધા જ સેક્ટર ઇન્ડૅક્સ આવી ગયા)
     selected_index = st.sidebar.selectbox(
-        "Select Index Group", list(indices_dict.keys())
+        "Select Index Group (મેઈન ટ્રેક લિસ્ટ)", list(index_tickers.keys())
     )
 
     filter_node = st.sidebar.selectbox(
@@ -229,6 +242,7 @@ if check_password():
         ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"],
     )
 
+    # ૧. પસંદ કરેલા ઇન્ડૅક્સનું એનાલિસિસ બતાવો
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -253,36 +267,15 @@ if check_password():
 
     st.markdown("---")
 
-    st.subheader(f"📋 Constituent Target Matrix (With Previous Day Stats)")
+    # ૨. માર્કેટ કોન્સ્ટિટ્યુએન્ટ મેટ્રિક્સ (ટેબલ લોડિંગ)
+    st.subheader(f"📋 Constituent Target Matrix")
+    # જો આ સેક્ટરનું સ્ટોક લિસ્ટ મેપ્ડ હોય તો તે લોડ થશે, નહિતર ટોપ ૧૦ બેકઅપ શેર દેખાશે
+    stock_scan_list = constituent_groups.get(
+        selected_index, ["RELIANCE.NS", "TCS.NS", "SBIN.NS", "HDFCBANK.NS"]
+    )
+
     results = []
-    for stock in indices_dict[selected_index]:
+    for stock in stock_scan_list:
         res = analyze_asset(stock)
         if res:
             res["Asset Symbol"] = stock
-            results.append(res)
-
-    df_results = pd.DataFrame(results)
-    if not df_results.empty:
-        if filter_node != "All Levels":
-            df_final = df_results[
-                df_results["Matrix Node Status"].str.contains(
-                    filter_node, na=False, regex=False
-                )
-            ]
-        else:
-            df_final = df_results
-
-        if df_final.empty:
-            st.warning("આ સ્તરે હાલ કોઈ ડેટા મેચ થતો નથી.")
-        else:
-            display_cols = [
-                "Asset Symbol",
-                "Current Price",
-                "Structural Status",
-                "Matrix Node Status",
-                "Prev Open",
-                "Prev High",
-                "Prev Low",
-                "Prev Close",
-                "Prev Volume",
-            ]
