@@ -73,17 +73,23 @@ else:
             h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
             current_price = float(df["Close"].iloc[-1])
             span = h - l
+            
+            # 🛠️ ઇન્ડૅક્સ માટે એકદમ સોગંદ સરળ સિક્રેટ નામો
             levels = {
-                "Stratosphere Zone": l + (span * 2.0), "Horizon Major Axis": l + (span * 1.618), "Core Balance Node": l + (span * 0.618),
-                "Velocity Confirmation Node": l + (span * 0.272), "Secondary Pivot Node": l + (span * 0.236), "Anchor Baseline": l,
-                "Retraction Buffer Zone": l - (span * 0.618), "Extrapolated Range Lower": l - (span * 1.618), "Macro Boundary Low": l - (span * 2.0)
+                "Sky Target 3": l + (span * 2.0),
+                "Sky Target 2": l + (span * 1.618),
+                "Center Balance Zone": l + (span * 0.618),
+                "Floor Support 1": l + (span * 0.272),
+                "Floor Support 2": l + (span * 0.236),
+                "Base Zero": l,
+                "Floor Support 3": l - (span * 0.618)
             }
             closest_node = "In-Between Zones"
             min_diff = float("inf")
             for name, val in levels.items():
                 diff = abs(current_price - val)
                 if diff < min_diff: min_diff = diff; closest_node = name
-            return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Structural Node": f"⚡ {closest_node}"}
+            return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Node Level": f"⚡ {closest_node}"}
         except: return None
 
     def analyze_stock_yearly(ticker_name):
@@ -95,12 +101,22 @@ else:
             current_price = float(df["Close"].iloc[-1])
             span = year_high - year_low
             
+            # 🛠️ સ્ટોક્સ માટે પણ એકદમ આસાન ટ્રેડિંગ શબ્દો સેટ કર્યા
             raw_levels = {
-                "Stratosphere Extension Max": year_low + (span * 2.0), "Horizon Major Axis": year_low + (span * 1.618), "Yearly Ultimate High": year_high,
-                "Core Balance Node": year_low + (span * 0.618), "Velocity Conformation Node": year_low + (span * 0.272), "Secondary Pivot Node": year_low + (span * 0.236),
-                "Ground Zero Base": year_low, "Retraction Buffer Zone": year_low - (span * 0.618), "Extrapolated Range Lower": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
+                "Sky Target 3": year_low + (span * 2.0),
+                "Sky Target 2": year_low + (span * 1.618),
+                "Sky Target 1": year_high,
+                "Center Balance Zone": year_low + (span * 0.618),
+                "Floor Support 1": year_low + (span * 0.272),
+                "Floor Support 2": year_low + (span * 0.236),
+                "Base Zero": year_low,
+                "Floor Support 3": year_low - (span * 0.618),
+                "Floor Support 4": year_low - (span * 1.618),
+                "Floor Support 5": year_low - (span * 2.0)
             }
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+            
+            # ૩ ઉપર અને ૨ નીચે પ્રોક્સિમિટી ફિલ્ટર લોજિક
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -160,11 +176,5 @@ else:
                 col3.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
                 
                 st.markdown("---")
-                st.markdown(f"### 🦅 Symmetrical Proximity Matrix (3 Up / 2 Down Levels)")
-                levels_data = [{"Matrix Structural Node": name, "Calculated Threshold": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
-                st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
-            else:
-                st.error("❌ ડેટા મળ્યો નથી.")
-    else:
-        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક પસંદ કરો.")
-
+                st.markdown(f"### 🦅 Easy Proximity Matrix (3 Up / 2 Down Levels)")
+                levels_data = [{"Easy Structural Level": name, "Calculated Price": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
