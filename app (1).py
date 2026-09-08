@@ -59,7 +59,6 @@ if check_password():
         index_tickers = {"NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK"}
         return indices, index_tickers
 
-    # કોર એનાલિસિસ ફંક્શન (માસ્ટર ટેબલ માટે - બેકએન્ડ હંમેશા 1y રેન્જ રાખશે સેફ્ટી માટે)
     def analyze_asset(ticker):
         try:
             df = yf.download(ticker, period="1y", auto_adjust=True, progress=False)
@@ -123,15 +122,13 @@ if check_password():
         except:
             return None
 
-    # 🛠️ મલ્ટી-ટાઈમફ્રેમ એનાલિસિસ એન્જિન (ડીપ સેક્શન માટે)
     def analyze_deep_asset(ticker, timeframe):
         try:
-            # ટાઈમફ્રેમ મુજબ યોગ્ય પિરિયડ નક્કી કરવો
             if timeframe == "Daily":
-                fetch_period = "5d"  # લિસ્ટિંગમાંથી છેલ્લો દિવસ કાઢવા માટે
+                fetch_period = "5d"
             elif timeframe == "Weekly":
                 fetch_period = "3mo"
-            else:  # Yearly
+            else:
                 fetch_period = "1y"
 
             df = yf.download(ticker, period=fetch_period, auto_adjust=True, progress=False)
@@ -142,34 +139,30 @@ if check_password():
 
             current_price = float(df["Close"].iloc[-1])
 
-            # રેઝામ્પલિંગ ડેટા (Timeframe Logic Conversion)
             if timeframe == "Daily":
-                # છેલ્લો પૂરો થયેલો દિવસ એટલે છેલ્લેથી બીજો રેકોર્ડ (-2)
                 target_df = df.iloc[-2]
                 o, h, l, c = (
-                    target_df["Open"],
-                    target_df["High"],
-                    target_df["Low"],
-                    target_df["Close"],
+                    float(target_df["Open"]),
+                    float(target_df["High"]),
+                    float(target_df["Low"]),
+                    float(target_df["Close"]),
                 )
                 v = int(target_df["Volume"])
                 high_bound, low_bound = h, l
             elif timeframe == "Weekly":
-                # છેલ્લા પૂરા થયેલા વીકની કેન્ડલ
                 df_weekly = df.resample("W").agg(
                     {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
                 )
                 target_df = df_weekly.iloc[-2]
                 o, h, l, c = (
-                    target_df["Open"],
-                    target_df["High"],
-                    target_df["Low"],
-                    target_df["Close"],
+                    float(target_df["Open"]),
+                    float(target_df["High"]),
+                    float(target_df["Low"]),
+                    float(target_df["Close"]),
                 )
                 v = int(target_df["Volume"])
                 high_bound, low_bound = h, l
             else:
-                # Yearly (છેલ્લા ૧ વર્ષનો મેક્સિમમ ડેટા)
                 o = float(df["Open"].iloc[0])
                 h = float(df["High"].max())
                 l = float(df["Low"].min())
@@ -177,7 +170,6 @@ if check_password():
                 v = int(df["Volume"].sum())
                 high_bound, low_bound = h, l
 
-            # પસંદ કરેલા ટાઈમફ્રેમના હાઇ-લો પરથી ફિબોનાચી લેવલ્સ ગણવા
             span = high_bound - low_bound
             levels = {
                 "Stratosphere Zone": low_bound + (span * 4.236),
@@ -212,7 +204,6 @@ if check_password():
         ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"],
     )
 
-    # ૧. ઇન્ડૅક્સ સ્ટ್ರક્ચર ડિસ્પ્લે
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -237,7 +228,6 @@ if check_password():
 
     st.markdown("---")
 
-    # ૨. માસ્ટર ડેટા ટેબલ (સેફ મોડ)
     st.subheader(f"📋 Constituent Target Matrix (With Previous Day Stats)")
     results = []
     for stock in indices_dict[selected_index]:
@@ -278,9 +268,21 @@ if check_password():
     # 🎯 ૩. એડવાન્સ સેક્શન: સિંગલ એસેટ ડીપ મલ્ટી-ટાઈમફ્રેમ એનાલિસિસ
     st.subheader("🎯 Single Asset Deep Analysis")
 
-    search_options = [index_tickers[selected_index]] + indices_dict[
-        selected_index
-    ]
+    search_options = [index_tickers[selected_index]] + indices_dict[selected_index]
 
     col_input1, col_input2 = st.columns(2)
     with col_input1:
+        selected_asset = st.selectbox("ચોક્કસ સ્ટોક અથવા ઇન્ડૅક્સ પસંદ કરો:", search_options)
+    with col_input2:
+        selected_timeframe = st.selectbox(
+            "Select Timeframe Structure (એનાલિસિસ સમયગાળો):", ["Daily", "Weekly", "Yearly"]
+        )
+
+    if selected_asset and selected_timeframe:
+        with st.spinner(f"{selected_timeframe} ડેટા અને સિક્રેટ લેવલ્સ ગણાઈ રહ્યા છે..."):
+            deep_res = analyze_deep_asset(selected_asset, selected_timeframe)
+
+            if deep_res:
+                col_a, col_b = st.columns(2)
+
+                with col_a:
