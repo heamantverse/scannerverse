@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન અહીં લોક છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો સાચો આઈડી અને ટોકન અહીં લોક છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -118,7 +118,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -156,10 +156,9 @@ else:
 
     # ૧. ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
-        index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
-        if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-        else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
+    index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
+    if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
+    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu (With Suggestions)")
@@ -183,4 +182,6 @@ else:
         search_query = search_query_active.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        with st.spinner(f"'{resolved_ticker}' નો ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        # 🛠️ એરર ફિક્સ: st.spinner વાળા કન્ફ્લિક્ટ બ્લોકને સાદો ફ્લેટ કરી દીધો
+        stock_res = analyze_stock_yearly(resolved_ticker)
+        if stock_res:
