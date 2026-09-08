@@ -58,7 +58,7 @@ else:
         "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
         "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
         "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-        "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+        "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
         "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
         "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
@@ -73,8 +73,6 @@ else:
             h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
             current_price = float(df["Close"].iloc[-1])
             span = h - l
-            
-            # 🛠️ ઇન્ડૅક્સ માટે એકદમ સોગંદ સરળ સિક્રેટ નામો
             levels = {
                 "Sky Target 3": l + (span * 2.0),
                 "Sky Target 2": l + (span * 1.618),
@@ -101,7 +99,6 @@ else:
             current_price = float(df["Close"].iloc[-1])
             span = year_high - year_low
             
-            # 🛠️ સ્ટોક્સ માટે પણ એકદમ આસાન ટ્રેડિંગ શબ્દો સેટ કર્યા
             raw_levels = {
                 "Sky Target 3": year_low + (span * 2.0),
                 "Sky Target 2": year_low + (span * 1.618),
@@ -115,7 +112,6 @@ else:
                 "Floor Support 5": year_low - (span * 2.0)
             }
             
-            # ૩ ઉપર અને ૨ નીચે પ્રોક્સિમિટી ફિલ્ટર લોજિક
             sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
@@ -176,5 +172,10 @@ else:
                 col3.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
                 
                 st.markdown("---")
-                st.markdown(f"### 🦅 Easy Proximity Matrix (3 Up / 2 Down Levels)")
+                # 🔒 સુધારેલું સિક્રેટ હેડિંગ: કોઈ આંકડા કે હિન્ટ વગર પ્યોર કસ્ટમ ટેબલ
+                st.markdown(f"### 🦅 Symmetrical Price Matrix")
                 levels_data = [{"Easy Structural Level": name, "Calculated Price": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
+                st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
+            else:
+                st.error("❌ ડેટા મળ્યો નથી.")
+    else:
