@@ -28,10 +28,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# --- કાયમી સેશન મેમરી સેટઅપ (ડેટા બચાવવા માટે) ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-if "hidden_search_target" not in st.session_state:
-    st.session_state["hidden_search_target"] = None
+if "keep_my_stock" not in st.session_state:
+    st.session_state["keep_my_stock"] = None
 
 # 🏛️ માર્કેટ ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
 all_market_indices = {
@@ -40,7 +41,7 @@ all_market_indices = {
     "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
 }
 
-# 📥 ઓટો-સજેશન માટે સ્ટોક્સનું લિસ્ટ
+# 📥 સજેશન પૂલ લિસ્ટ
 suggestions_pool = [
     "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
     "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -105,19 +106,15 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low,
             "Floor Support 3": year_low - (span * 0.618),
             "Floor Support 4": year_low - (span * 1.618),
-            "Floor Support 5": year_low - (span * 2.0)
+            "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        # 🛠️ સચોટ ફિલ્ટર: કિંમતના આધારે સોર્ટ કરીને બરાબર "૩ ઉપર અને ૨ નીચે" ના જ લેવલ પકડવા
         sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
-        
-        # લાઈવ ભાવથી કિંમત ક્યાં વધારે છે તે ઇન્ડેક્સ પોઝિશન નક્કી કરવી
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val:
                 split_idx = i + 1
-        
-        # 🎯 પર્ફેક્ટ કટ-ઓફ: નીચેના ૨ લેવલ અને ઉપરના ૩ લેવલ જ લેવા
+                
         start_idx = max(0, split_idx - 2)
         end_idx = min(len(sorted_levels), split_idx + 3)
         filtered_levels = dict(sorted_levels[start_idx:end_idx])
@@ -128,7 +125,7 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- ગેટવે કંટ્રોલ ---
+# --- ગેટવે એન્ટ્રી ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -152,20 +149,21 @@ else:
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
     
-    def on_change_stock():
-        selected = st.session_state.stock_selectbox
-        if selected != "SELECT STOCK":
-            st.session_state["hidden_search_target"] = selected
-
-    st.selectbox(
+    # 🎯 સ્માર્ટ ફિક્સ: ડ્રોપડાઉન સિલેક્શન થતાં જ કાયમી કી 'keep_my_stock' માં ડેટા સ્ટોર થશે
+    user_choice = st.selectbox(
         "સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", 
         suggestions_pool, 
-        key="stock_selectbox",
-        index=0,
-        on_change=on_change_stock
+        index=0
     )
 
-    search_query_active = st.session_state["hidden_search_target"]
+    # જો યુઝર નવું નામ પસંદ કરે, તો તેને કાયમી લોક કરો
+    if user_choice and user_choice != "SELECT STOCK":
+        st.session_state["keep_my_stock"] = user_choice
+        # સ્માર્ટ રીસેટ: સર્ચ બોક્સને બેકએન્ડમાં ખાલી કરવા છતાં નીચે ડેટા લાઈવ રાખવો
+        st.write("<script>document.getElementsByTagName('select')[0].value='SELECT STOCK'</script>", unsafe_allow_html=True)
+
+    # ફાઇનલ રેન્ડરિંગ ટાર્ગેટ
+    search_query_active = st.session_state["keep_my_stock"]
 
     if search_query_active:
         search_query = search_query_active.strip().upper()
@@ -181,5 +179,3 @@ else:
                 col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
                 col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
                 st.write(f"🗒️ **Previous Close:** ₹ {stock_res['Prev Close']} | **Today's Volume:** {stock_res['Volume']:,}")
-                
-                st.markdown("---")
