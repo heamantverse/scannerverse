@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (મેં ટોકન અને આઈડી ફોર્મેટ સેફ કરી દીધા છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -70,24 +70,38 @@ suggestions_pool = [
     "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
 ]
 
+# 🛠️ એડવાન્સ ડેટા ક્લીનર: મલ્ટી-ઇન્ડેક્સ કૉલમ્સને સંપૂર્ણ સાફ કરવા માટે
 def clean_columns(df):
     if df is not None and not df.empty:
         try:
-            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
             df.columns = [str(c).strip() for c in df.columns]
-        except: pass
+        except:
+            pass
     return df
+
+def extract_scalar(series_or_val):
+    if isinstance(series_or_val, (pd.Series, np.ndarray)):
+        if len(series_or_val) > 0:
+            return float(series_or_val[0])
+        return 0.0
+    return float(series_or_val)
 
 def analyze_index_daily(ticker_name, display_name):
     try:
         df = yf.download(ticker_name, period="5d", auto_adjust=True, progress=False)
         if df.empty or len(df) < 2: return None
         df = clean_columns(df)
+        
         target_df = df.iloc[-2]
-        h = float(target_df["High"].dropna().iloc if hasattr(target_df["High"], "iloc") else target_df["High"])
-        l = float(target_df["Low"].dropna().iloc if hasattr(target_df["Low"], "iloc") else target_df["Low"])
-        current_price = float(df["Close"].iloc[-1].dropna().iloc if hasattr(df["Close"].iloc[-1], "iloc") else df["Close"].iloc[-1])
+        h = extract_scalar(target_df["High"])
+        l = extract_scalar(target_df["Low"])
+        
+        last_row = df.iloc[-1]
+        current_price = extract_scalar(last_row["Close"])
         span = h - l
+        
         levels = {
             "Sky Target 3": l + (span * 2.0), "Sky Target 2": l + (span * 1.618), "Center Balance Zone": l + (span * 0.618),
             "Floor Support 1": l + (span * 0.272), "Floor Support 2": l + (span * 0.236), "Base Zero": l, "Floor Support 3": l - (span * 0.618)
@@ -105,31 +119,35 @@ def analyze_stock_yearly(ticker_name):
         df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
         if df_hist.empty or len(df_hist) < 20: return None
         df_hist = clean_columns(df_hist)
-        year_high = float(df_hist["High"].max())
-        year_low = float(df_hist["Low"].min())
+        
+        # 🛠️ મલ્ટી-ઇન્ડેક્સ સિરીઝમાંથી સચોટ મેક્સિમમ અને મિનિમમ વેલ્યુ કાઢવી
+        year_high = float(df_hist["High"].max() if not isinstance(df_hist["High"].max(), pd.Series) else df_hist["High"].max().iloc[0])
+        year_low = float(df_hist["Low"].min() if not isinstance(df_hist["Low"].min(), pd.Series) else df_hist["Low"].min().iloc[0])
         span = year_high - year_low
         
         df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
         if df_today.empty or len(df_today) < 2: return None
         df_today = clean_columns(df_today)
-        t_row, p_row = df_today.iloc[-1], df_today.iloc[-2]
         
-        current_price = float(t_row["Close"])
-        today_open = float(t_row["Open"])
-        today_high = float(t_row["High"])
-        today_low = float(t_row["Low"])
-        prev_close = float(p_row["Close"])
-        today_volume = int(t_row["Volume"])
+        t_row, p_row = df_today.iloc[-1], df_today.iloc[-2]
+        current_price = extract_scalar(t_row["Close"])
+        today_open = extract_scalar(t_row["Open"])
+        today_high = extract_scalar(t_row["High"])
+        today_low = extract_scalar(t_row["Low"])
+        prev_close = extract_scalar(p_row["Close"])
+        today_volume = int(extract_scalar(t_row["Volume"]))
         
         raw_levels = {
             "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
             "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+        
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
+                
         start_idx = max(0, split_idx - 2)
         end_idx = min(len(sorted_levels), split_idx + 3)
         filtered_levels = dict(sorted_levels[start_idx:end_idx])
@@ -158,25 +176,18 @@ else:
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
         success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully!")
-        if success: st.sidebar.success("✅ ટેલિગ્રામ કનેક્ટેડ!")
-        else: st.sidebar.warning("⚠️ ડાયરેક્ટ મેસેજ હોલ્ડ પર છે, પણ સાઇટ ચાલુ રહેશે.")
+        if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
+        else: st.sidebar.error("❌ બોટ ચેક કરો.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     raw_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items()]
     index_results = [res for res in raw_results if res is not None]
     if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ રહ્યો છે... કૃપા કરીને થોડી સેકન્ડ પછી પેજ રિф્રેશ કરો.")
+    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu")
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:", suggestions_pool, index=0)
 
     if user_choice and user_choice != "SELECT STOCK":
-        resolved_ticker = all_market_indices[user_choice] if user_choice in all_market_indices else user_choice + ".NS"
-        stock_res = analyze_stock_yearly(resolved_ticker)
-        
-        if stock_res is not None:
-            st.markdown(f"## 🎉 {user_choice} Matrix Summary")
-            col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
-            col2.write(f"📊 **Today's Open:** ₹ {stock_res['Today Open']}")
+        resolved_ticker = all_market_indices[search_query] if user_choice in all_market_indices else user_choice + ".NS"
