@@ -7,19 +7,22 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારા બંને નંબરો કાળજીપૂર્વક કૌંસ વગર અહીં લખો)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારા બંને નંબરો કાળજીપૂર્વક કૌંસ કે કોઈ સ્પેસ વગર અહીં લખો)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
 # ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
 def send_telegram_alert(message_text):
-    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "અહીં_તમારો_ટેલિગ્રામ_ટોકન_નંબર_પેસ્ટ_કરો":
+    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g":
         try:
             url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
             payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message_text, "parse_mode": "Markdown"}
-            requests.post(url, json=payload, timeout=5)
-        except:
-            pass
+            res = requests.post(url, json=payload, timeout=5)
+            return res.status_code == 200
+        except Exception as e:
+            st.sidebar.error(f"Telegram Error: {str(e)}")
+            return False
+    return False
 
 st.set_page_config(
     page_title="Proprietary Matrix Scanner",
@@ -114,7 +117,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -144,6 +147,14 @@ else:
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
+    # 🛠️ ડાબી બાજુ સાઇડબારમાં મેન્યુઅલ ટેસ્ટ બટન મૂક્યું છે
+    st.sidebar.subheader("🤖 Connection Diagnostics")
+    if st.sidebar.button("⚡ Test Telegram Alert"):
+        success = send_telegram_alert("🚀 *SUCCESS:* Your Proprietary Matrix Scanner is now successfully linked to this Telegram Bot!")
+        if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો! ટેલિગ્રામ ચેક કરો.")
+        else: st.sidebar.error("❌ મેસેજ ન ગયો. Token કે Chat ID ખોટો છે.")
+
+    # ૧. ઓલ ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
@@ -169,12 +180,3 @@ else:
 
     if search_query_active:
         search_query = search_query_active.strip().upper()
-        # 🛠️ એરર ફિક્સ: લાઈન નંબર ૨૦૦ ની ભૂલ સંપૂર્ણપણે સુધારી લીધી
-        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
-
-        with st.spinner(f"'{resolved_ticker}' નો રિયલ-ટાઇમ માર્કેટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
-            stock_res = analyze_stock_yearly(resolved_ticker)
-            if stock_res:
-                st.markdown(f"## 🎉 {search_query} Matrix Summary")
-                col1, col2, col3, col4 = st.columns(4)
-                col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
