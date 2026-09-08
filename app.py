@@ -9,7 +9,7 @@ CORRECT_PASSWORD = "PowerFULLtrade"
 
 # 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન મેં પર્ફેક્ટ લોક કરી દીધા છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
-TELEGRAM_CHAT_ID = "-1002360565860"
+TELEGRAM_CHAT_ID = "381187243"
 
 # ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
 def send_telegram_alert(message_text):
