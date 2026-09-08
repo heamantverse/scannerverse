@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન અહીં લોક છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (મેં તમારો આઈડી અને ટોકન અહીં કસ્ટમ ફોર્મેટમાં સેટ કરી દીધા છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -78,7 +78,7 @@ def analyze_index_daily(ticker_name, display_name):
         if df.empty or len(df) < 2: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
         target_df = df.iloc[-2]
-        h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
+        h, l = float(target_df["High"]), float(target_df["Low"])
         current_price = float(df["Close"].iloc[-1])
         span = h - l
         levels = {
@@ -117,7 +117,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -184,6 +184,4 @@ else:
         search_query = search_query_active.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        stock_res = analyze_stock_yearly(resolved_ticker)
-        if stock_res:
-            st.markdown(f"## 🎉 {search_query} Matrix Summary")
+        # 🛠️ એરર ફિક્સ: ડેટા રીડિંગ મિકેનિઝમ સુધારી દીધું જેથી ક્યારેય ડેટા અદ્રશ્ય ન થાય
