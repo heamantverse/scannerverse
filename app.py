@@ -73,11 +73,9 @@ suggestions_pool = [
 def clean_columns(df):
     if df is not None and not df.empty:
         try:
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             df.columns = [str(c).strip() for c in df.columns]
-        except:
-            pass
+        except: pass
     return df
 
 def analyze_index_daily(ticker_name, display_name):
@@ -85,14 +83,11 @@ def analyze_index_daily(ticker_name, display_name):
         df = yf.download(ticker_name, period="5d", auto_adjust=True, progress=False)
         if df.empty or len(df) < 2: return None
         df = clean_columns(df)
-        
         target_df = df.iloc[-2]
-        h = float(target_df["High"].dropna().iloc[0] if hasattr(target_df["High"], "iloc") else target_df["High"])
-        l = float(target_df["Low"].dropna().iloc[0] if hasattr(target_df["Low"], "iloc") else target_df["Low"])
-        
-        current_price = float(df["Close"].iloc[-1].dropna().iloc[0] if hasattr(df["Close"].iloc[-1], "iloc") else df["Close"].iloc[-1])
+        h = float(target_df["High"].dropna().iloc if hasattr(target_df["High"], "iloc") else target_df["High"])
+        l = float(target_df["Low"].dropna().iloc if hasattr(target_df["Low"], "iloc") else target_df["Low"])
+        current_price = float(df["Close"].iloc[-1].dropna().iloc if hasattr(df["Close"].iloc[-1], "iloc") else df["Close"].iloc[-1])
         span = h - l
-        
         levels = {
             "Sky Target 3": l + (span * 2.0), "Sky Target 2": l + (span * 1.618), "Center Balance Zone": l + (span * 0.618),
             "Floor Support 1": l + (span * 0.272), "Floor Support 2": l + (span * 0.236), "Base Zero": l, "Floor Support 3": l - (span * 0.618)
@@ -103,15 +98,13 @@ def analyze_index_daily(ticker_name, display_name):
             diff = abs(current_price - val)
             if diff < min_diff: min_diff = diff; closest_node = name
         return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Node Level": f"⚡ {closest_node}"}
-    except:
-        return {"Index Tracker": display_name, "Current Spot": "Loading...", "Nearby Node Level": "Fetching Fresh Feed"}
+    except: return None
 
 def analyze_stock_yearly(ticker_name):
     try:
         df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
         if df_hist.empty or len(df_hist) < 20: return None
         df_hist = clean_columns(df_hist)
-        
         year_high = float(df_hist["High"].max())
         year_low = float(df_hist["Low"].min())
         span = year_high - year_low
@@ -119,25 +112,24 @@ def analyze_stock_yearly(ticker_name):
         df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
         if df_today.empty or len(df_today) < 2: return None
         df_today = clean_columns(df_today)
+        t_row, p_row = df_today.iloc[-1], df_today.iloc[-2]
         
-        current_price = float(df_today["Close"].iloc[-1])
-        today_open = float(df_today["Open"].iloc[-1])
-        today_high = float(df_today["High"].iloc[-1])
-        today_low = float(df_today["Low"].iloc[-1])
-        prev_close = float(df_today["Close"].iloc[-2])
-        today_volume = int(df_today["Volume"].iloc[-1])
+        current_price = float(t_row["Close"])
+        today_open = float(t_row["Open"])
+        today_high = float(t_row["High"])
+        today_low = float(t_row["Low"])
+        prev_close = float(p_row["Close"])
+        today_volume = int(t_row["Volume"])
         
         raw_levels = {
             "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
             "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
-        
         sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
-                
         start_idx = max(0, split_idx - 2)
         end_idx = min(len(sorted_levels), split_idx + 3)
         filtered_levels = dict(sorted_levels[start_idx:end_idx])
@@ -148,7 +140,7 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- મુખ્ય ગેઇટવે કંટ્રોલ ફ્લો ---
+# --- ગેઇટવે કંટ્રોલ ફ્લો ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -160,36 +152,33 @@ if not st.session_state["authenticated"]:
         else: st.error("❌ ખોટો પાસવર્ડ!")
 else:
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully to your Telegram Bot Profile!")
+        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully!")
         if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
-        else: st.sidebar.error("❌ બોટ સ્ટાર્ટ કરો અથવા ચેટ આઈડી ચેક કરો.")
+        else: st.sidebar.error("❌ બોટ ચેક કરો.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    
-    # 🛡️ ૧૦ ઇન્ડાઇસિસ લાઇન-બાય-લાઇન સેફ લોડિંગ
-    index_results = []
-    for name, ticker in all_market_indices.items():
-        res = analyze_index_daily(ticker, name)
-        if res is not None: index_results.append(res)
-    
-    if len(index_results) > 0:
-        st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-    else:
-        st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ રહ્યો છે... કૃપા કરીને પેજ રિફ્રેશ કરો.")
+    raw_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items()]
+    index_results = [res for res in raw_results if res is not None]
+    if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
+    else: st.warning("ઇન્ડૅક્સ ડેટา લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu")
-
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:", suggestions_pool, index=0)
 
+    # 🛠️ સચોટ ફિલ્ટર: આખા રિસ્પોન્સ લોજિકને એકદમ સાદું ફ્લેટ અને સિક્યોર કરી દીધું
     if user_choice and user_choice != "SELECT STOCK":
-        search_query = user_choice.strip().upper()
-        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
-
+        resolved_ticker = all_market_indices[user_choice] if user_choice in all_market_indices else user_choice + ".NS"
         stock_res = analyze_stock_yearly(resolved_ticker)
-        if stock_res:
+        
+        if stock_res is not None:
+            st.markdown(f"## 🎉 {user_choice} Matrix Summary")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
+            col2.write(f"📊 **Today's Open:** ₹ {stock_res['Today Open']}")
+            col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
+            col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
