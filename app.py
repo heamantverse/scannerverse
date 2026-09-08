@@ -7,20 +7,19 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારા બંને નંબરો કાળજીપૂર્વક કૌંસ કે કોઈ સ્પેસ વગર અહીં લખો)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારા આંકડા મેં પર્ફેક્ટ સેટ કરી દીધા છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
-TELEGRAM_CHAT_ID = "381187243"
+TELEGRAM_CHAT_ID = "-1002360565860"  # તમારો સાચો ચેટ આઈડી નંબર
 
 # ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
 def send_telegram_alert(message_text):
-    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "અહીં_તમારો_ટેલિગ્રામ_ટોકન_નંબર_પેસ્ટ_કરો":
+    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "":
         try:
             url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
             payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message_text, "parse_mode": "Markdown"}
             res = requests.post(url, json=payload, timeout=5)
             return res.status_code == 200
-        except Exception as e:
-            st.sidebar.error(f"Telegram Error: {str(e)}")
+        except:
             return False
     return False
 
@@ -57,6 +56,7 @@ all_market_indices = {
     "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
 }
 
+# 💡 લિસ્ટ પાછું સેટ કર્યું જેથી સર્ચ કરતા સમયે સજેશન (Suggestions) પર્ફેક્ટ દેખાય
 suggestions_pool = [
     "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
     "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -79,7 +79,7 @@ def analyze_index_daily(ticker_name, display_name):
         if df.empty or len(df) < 2: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
         target_df = df.iloc[-2]
-        h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
+        h, l, c = float(target_df["High"].iloc[0] if isinstance(target_df["High"], pd.Series) else target_df["High"]), float(target_df["Low"].iloc[0] if isinstance(target_df["Low"], pd.Series) else target_df["Low"]), float(target_df["Close"].iloc[0] if isinstance(target_df["Close"], pd.Series) else target_df["Close"])
         current_price = float(df["Close"].iloc[-1])
         span = h - l
         levels = {
@@ -99,11 +99,13 @@ def analyze_stock_yearly(ticker_name):
         df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
         if df_hist.empty or len(df_hist) < 20: return None
         if isinstance(df_hist.columns, pd.MultiIndex): df_hist.columns = df_hist.columns.get_level_values(0)
+        
         year_high, year_low = float(df_hist["High"].max()), float(df_hist["Low"].min())
         span = year_high - year_low
         
         df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
         if isinstance(df_today.columns, pd.MultiIndex): df_today.columns = df_today.columns.get_level_values(0)
+        
         current_price = float(df_today["Close"].iloc[-1])
         today_open = float(df_today["Open"].iloc[-1])
         today_high = float(df_today["High"].iloc[-1])
@@ -117,7 +119,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -147,14 +149,14 @@ else:
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # 🛠️ ડાબી બાજુ સાઇડબારમાં મેન્યુઅલ ટેસ્ટ બટન મૂક્યું છે
+    # 🛠️ ડાયરેક્ટ ચેક કરવા માટે બટન પાછું એક્ટિવેટ કર્યું
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Proprietary Matrix Scanner is now successfully linked to this Telegram Bot!")
+        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now successfully linked to this Telegram Bot Channel!")
         if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો! ટેલિગ્રામ ચેક કરો.")
-        else: st.sidebar.error("❌ મેસેજ ન ગયો. Token કે Chat ID ખોટો છે.")
+        else: st.sidebar.error("❌ મેસેજ ન ગયો. સેટિંગ્સ પ્રોબ્લેમ છે.")
 
-    # ૧. ઓલ ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
+    # ૧. ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
@@ -162,21 +164,14 @@ else:
         else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
-    st.subheader("🔍 Asset Search Menu (Smart Auto-Reset)")
+    st.subheader("🔍 Asset Search Menu (With Suggestions)")
 
-    def handle_search_clear():
-        typed_val = st.session_state.text_search_input
-        if typed_val.strip() != "":
-            st.session_state["final_search_query"] = typed_val.strip()
-            st.session_state.text_search_input = ""
+    # 🛠️ ઓટો-સજેશન પાછું લાવવા માટે સ્માર્ટ બોક્સ સેટ કર્યું
+    def handle_selectbox_change():
+        selected = st.session_state.stock_selectbox_key
+        if selected != "SELECT STOCK":
+            st.session_state["final_search_query"] = selected
 
-    st.text_input(
-        "સ્ટોક અથવા ઇન્ડેક્સનું નામ લખો (e.g., TCS, SUZLON, NIFTY 50) અને Enter દબાવો:",
-        key="text_search_input",
-        on_change=handle_search_clear
-    )
-
-    search_query_active = st.session_state["final_search_query"]
-
-    if search_query_active:
-        search_query = search_query_active.strip().upper()
+    st.selectbox(
+        "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો (સજેશન જોવા માટે અક્ષર ટાઈપ કરો):",
+        suggestions_pool,
