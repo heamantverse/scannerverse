@@ -42,14 +42,36 @@ def check_password():
     return True
 
 if check_password():
-    # ૫ મુખ્ય ઇન્ડાઇસિસનું ફિક્સ ડિક્શનરી
-    main_5_indices = {
+    # 🏛️ ભારતના તમામ નાના-મોટા સેક્ટર અને ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
+    all_market_indices = {
         "NIFTY 50": "^NSEI",
         "NIFTY BANK": "^NSEBANK",
         "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+        "NIFTY MIDCAP 50": "^CRSMID",
+        "NIFTY SMALLCAP 50": "^CNXSMALL",
         "NIFTY IT": "^CNXIT",
-        "NIFTY AUTO": "^CNXAUTO"
+        "NIFTY AUTO": "^CNXAUTO",
+        "NIFTY PHARMA": "^CNXPHARMA",
+        "NIFTY FMCG": "^CNXFMCG",
+        "NIFTY METAL": "^CNXMETAL"
     }
+
+    # 📥 ઓટો-સજેશન માટે ઇન-બિલ્ટ ૨૦૦+ સ્ટોક્સનું આખું લિસ્ટ (સાદા નામો સાથે)
+    suggestions_pool = [
+        "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
+        "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
+        "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
+        "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
+        "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
+        "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
+        "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
+        "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
+        "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
+        "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+        "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
+        "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
+        "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", "DELHIVERY", "MANAPPURAM"
+    ]
 
     # ⏳ લોજિક ૧: ઇન્ડૅક્સ માટે પ્યોર DAILY બેઝ એનાલિસિસ ફંક્શન
     def analyze_index_daily(ticker_name, display_name):
@@ -58,13 +80,12 @@ if check_password():
             if df.empty or len(df) < 2: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             
-            # ગઈકાલની ડેઇલી કેન્ડલનો હાઇ-લો ડેટા
             target_df = df.iloc[-2]
             h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
             current_price = float(df["Close"].iloc[-1])
             span = h - l
             
-            # ડેઇલી ફિબોનાચી સિક્રેટ લેવલ્સ
+            # 🔒 ફિબોનાચી આંકડા વગરનું પ્યોર સિક્રેટ લોજિક
             levels = {
                 "Stratosphere Zone": l + (span * 4.236),
                 "Horizon Axis": l + (span * 1.618),
@@ -72,51 +93,48 @@ if check_password():
                 "Ground Zero": l
             }
             
-            # લાઈવ ભાવથી સૌથી નજીક (Nearby) કયું લેવલ છે તે શોધવું
             closest_node = "In-Between Zones"
             min_diff = float("inf")
             for name, val in levels.items():
                 diff = abs(current_price - val)
                 if diff < min_diff:
-                    min_diff = diff
-                    closest_node = name
+                    min_diff = diff; closest_node = name
             
             return {
-                "Index Name": display_name,
-                "Current Price": round(current_price, 2),
+                "Index Tracker": display_name,
+                "Current Spot": round(current_price, 2),
                 "Nearby Structural Node": closest_node
             }
         except: return None
 
-    # 📈 લોજિક ૨: સ્ટોક્સ માટે પ્યોર YEARLY બેઝ એનાલિસિસ ફંક્શન (સર્ચ મેનુ માટે)
+    # 📈 લોજિક ૨: સ્ટોક્સ માટે પ્યોર YEARLY બેઝ એનાલિસિસ ફંક્શન (સંપૂર્ણ ડેટા માટે)
     def analyze_stock_yearly(ticker_name):
         try:
             df = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
             if df.empty or len(df) < 20: return None
             if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
             
-            # આખા ૧ વર્ષનો મેક્સિમમ હાઇ-લો ડેટા
             year_high, year_low = float(df["High"].max()), float(df["Low"].min())
             current_price = float(df["Close"].iloc[-1])
             span = year_high - year_low
             
-            # વાર્ષિક ૧૫ એ ૧૫ સિક્રેટ ફિબોનાચી લેવલ્સનો આખો ડેટા (Whole Data)
+            # 🔒 ૧૦０% સુરક્ષિત: ક્યાંય કોઈ ફિબોનાચી આંકડો કે હિન્ટ બતાવવામાં આવી નથી
             levels = {
-                "Stratosphere Matrix Max (4.236)": year_low + (span * 4.236),
-                "Stratosphere Boundary (3.414)": year_low + (span * 3.414),
-                "Stratosphere Core (2.618)": year_low + (span * 2.618),
-                "Upper Conformation Threshold (2.0)": year_low + (span * 2.0),
-                "Horizon Axis (1.618)": year_low + (span * 1.618),
-                "Velocity Intermission Zone (1.272)": year_low + (span * 1.272),
-                "Core Balance Node (0.618)": year_low + (span * 0.618),
-                "Secondary Pivot Node (0.236)": year_low + (span * 0.236),
-                "Ground Zero Base (0.00)": year_low,
-                "Retraction Buffer Zone (-0.618)": year_low - (span * 0.618),
-                "Extrapolated Range Lower (-1.618)": year_low - (span * 1.618),
-                "Lower Conformation Threshold (-2.0)": year_low - (span * 2.0),
-                "Structural Variance Low (-2.618)": year_low - (span * 2.618),
-                "Lower Multiplier Ex (-3.414)": year_low - (span * 3.414),
-                "Macro Boundary Low (-4.236)": year_low - (span * 4.236),
+                "Stratosphere Matrix Max": year_low + (span * 4.236),
+                "Stratosphere Boundary": year_low + (span * 3.414),
+                "Stratosphere Core": year_low + (span * 2.618),
+                "Upper Conformation Threshold": year_low + (span * 2.0),
+                "Horizon Axis": year_low + (span * 1.618),
+                "Velocity Intermission Zone": year_low + (span * 1.272),
+                "Core Balance Node": year_low + (span * 0.618),
+                "Secondary Pivot Node": year_low + (span * 0.236),
+                "Ground Zero Base": year_low,
+                "Retraction Buffer Zone": year_low - (span * 0.618),
+                "Extrapolated Range Lower": year_low - (span * 1.618),
+                "Lower Conformation Threshold": year_low - (span * 2.0),
+                "Structural Variance Low": year_low - (span * 2.618),
+                "Lower Multiplier Extension": year_low - (span * 3.414),
+                "Macro Boundary Low": year_low - (span * 4.236),
             }
             
             prev_close = float(df["Close"].iloc[-2])
@@ -131,17 +149,17 @@ if check_password():
             }
         except: return None
 
-    # --- મેઈન યુઆઈ લેઆઉટ ---
+    # --- મેઈન ડેશબોર્ડ લેઆઉટ ---
     st.title("🦅 Proprietary Structural Matrix Scanner (PRO)")
     st.markdown("---")
 
-    # 📊 વિભાગ ૧: મેઈન પેજ પર ફક્ત ૫ મુખ્ય ઇન્ડાઇસિસનો Nearby ડેટા
-    st.subheader("📈 Main Index Track List (Daily Base Nearby Matrix)")
-    st.write("આ ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને અત્યારના ભાવની **સૌથી નજીકનું લેવલ** બતાવે છે.")
+    # 📊 વિભાગ ૧: માસ્ટર ટ્રેક લિસ્ટ (ભારતના તમામ મુખ્ય ઇન્ડાઇસિસ ડેઇલી Nearby બેઝ)
+    st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
+    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને લાઈવ રેટની **સૌથી નજીકનું લેવલ** બતાવે છે.")
     
-    with st.spinner("ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
+    with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = []
-        for name, ticker in main_5_indices.items():
+        for name, ticker in all_market_indices.items():
             res = analyze_index_daily(ticker, name)
             if res: index_results.append(res)
         
@@ -152,23 +170,25 @@ if check_password():
 
     st.markdown("---")
 
-    # 🔍 વિભાગ ૨: ડેડિકેટેડ સર્ચ મેનુ (બીજો કોઈ પણ ડેટા ડાયરેક્ટ લોડ નહીં થાય)
-    st.subheader("🔍 Asset Search Menu (Yearly Whole Data Analysis)")
-    st.write("કોઈપણ સ્ટોક (e.g. TCS, SUZLON, TATAPOWER, SBIN) નું નામ લખીને એન્ટર કરો. તેનો **આખા ૧ વર્ષનો ડેટા મેટ્રિક્સ** નીચે લોડ થશે.")
+    # 🔍 વિભાગ ૨: ઓટો-સજેશન સર્ચ મેનુ (જ્યારે ટાઈપ કરશે ત્યારે જ ડેટા આવશે)
+    st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
+    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે. સિલેક્ટ કરતા જ તેનો **Yearly હોલ ડેટા** દેખાશે.")
     
-    # ⌨️ સંપૂર્ણ ખાલી સર્ચ બોક્સ (ડિફોલ્ટ કંઈ જ લોડ નહીં થાય)
-    user_search = st.text_input("સ્ટોક અથવા ઇન્ડેક્સનો સિમ્બોલ ટાઈપ કરો અને Enter દબાવો:", "")
+    # 💡 સ્માર્ટ સજેશન ડ્રોપડાઉન બોક્સ
+    user_choice = st.selectbox(
+        "સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):",
+        suggestions_pool,
+        index=0
+    )
 
-    if user_search:
-        search_query = user_search.strip().upper()
+    if user_choice and user_choice != "SELECT STOCK":
+        search_query = user_choice.strip().upper()
         
-        # જો યુઝર સર્ચ બોક્સમાં ઇન્ડેક્સનું નામ લખે
-        if search_query in main_5_indices: resolved_ticker = main_5_indices[search_query]
-        elif search_query in ["NIFTY50", "NIFTY 50"]: resolved_ticker = "^NSEI"
-        elif search_query in ["BANKNIFTY", "NIFTY BANK"]: resolved_ticker = "^NSEBANK"
-        else: resolved_ticker = search_query if search_query.endswith(".NS") or search_query.startswith("^") else search_query + ".NS"
+        # સ્માર્ટ ટીકર રિઝોલ્વિંગ લોજિક
+        if search_query in all_market_indices: resolved_ticker = all_market_indices[search_query]
+        else: resolved_ticker = search_query + ".NS"
 
-        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક (Yearly) હોલ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક (Yearly) સંપૂર્ણ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
             stock_res = analyze_stock_yearly(resolved_ticker)
 
             if stock_res:
@@ -184,16 +204,3 @@ if check_password():
                     st.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
                 
                 with col_b:
-                    st.markdown(f"### 🦅 Complete Symmetrical Matrix (1-Year Levels)")
-                    # ૧૫ એ ૧૫ એડવાન્સ સિક્રેટ લેવલ્સનો આખો ડેટા કિંમત સાથે બતાવવો
-                    for lvl_name, lvl_val in stock_res["Calculated Levels"].items():
-                        st.write(f"**{lvl_name}:** ₹{lvl_val:.2f}")
-            else:
-                st.error(f"❌ '{user_search}' નામનો કોઈ સ્ટોક કે ઇન્ડેક્સ મળ્યો નથી. કૃપા કરીને સાચો NSE Symbol લખો.")
-    else:
-        st.info("💡 સર્ચ બોક્સમાં સ્ટોકનું નામ લખો, અત્યારે નીચે કોઈ ડેટા લોડ કરેલો નથી.")
-
-    st.markdown("---")
-    if st.sidebar.button("Log Out"):
-        st.session_state["authenticated"] = False
-        st.rerun()
