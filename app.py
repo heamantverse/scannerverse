@@ -16,7 +16,7 @@ def send_telegram_alert(message_text):
     if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "":
         try:
             url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
-            payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message_text, "parse_mode": "Markdown"}
+            payload = {"chat_id": int(TELEGRAM_CHAT_ID.strip()), "text": message_text, "parse_mode": "Markdown"}
             res = requests.post(url, json=payload, timeout=5)
             return res.status_code == 200
         except:
@@ -72,9 +72,12 @@ suggestions_pool = [
 
 def clean_columns(df):
     if df is not None and not df.empty:
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        df.columns = [str(c).strip() for c in df.columns]
+        try:
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            df.columns = [str(c).strip() for c in df.columns]
+        except:
+            pass
     return df
 
 def analyze_index_daily(ticker_name, display_name):
@@ -84,11 +87,10 @@ def analyze_index_daily(ticker_name, display_name):
         df = clean_columns(df)
         
         target_df = df.iloc[-2]
-        h = float(target_df["High"].iloc[0] if isinstance(target_df["High"], pd.Series) else target_df["High"])
-        l = float(target_df["Low"].iloc[0] if isinstance(target_df["Low"], pd.Series) else target_df["Low"])
+        h = float(target_df["High"].dropna().iloc[0] if hasattr(target_df["High"], "iloc") else target_df["High"])
+        l = float(target_df["Low"].dropna().iloc[0] if hasattr(target_df["Low"], "iloc") else target_df["Low"])
         
-        last_row = df.iloc[-1]
-        current_price = float(last_row["Close"].iloc[0] if isinstance(last_row["Close"], pd.Series) else last_row["Close"])
+        current_price = float(df["Close"].iloc[-1].dropna().iloc[0] if hasattr(df["Close"].iloc[-1], "iloc") else df["Close"].iloc[-1])
         span = h - l
         
         levels = {
@@ -101,7 +103,8 @@ def analyze_index_daily(ticker_name, display_name):
             diff = abs(current_price - val)
             if diff < min_diff: min_diff = diff; closest_node = name
         return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Node Level": f"⚡ {closest_node}"}
-    except: return None
+    except:
+        return {"Index Tracker": display_name, "Current Spot": "Loading...", "Nearby Node Level": "Fetching Fresh Feed"}
 
 def analyze_stock_yearly(ticker_name):
     try:
@@ -117,15 +120,12 @@ def analyze_stock_yearly(ticker_name):
         if df_today.empty or len(df_today) < 2: return None
         df_today = clean_columns(df_today)
         
-        t_row = df_today.iloc[-1]
-        p_row = df_today.iloc[-2]
-        
-        current_price = float(t_row["Close"])
-        today_open = float(t_row["Open"])
-        today_high = float(t_row["High"])
-        today_low = float(t_row["Low"])
-        prev_close = float(p_row["Close"])
-        today_volume = int(t_row["Volume"])
+        current_price = float(df_today["Close"].iloc[-1])
+        today_open = float(df_today["Open"].iloc[-1])
+        today_high = float(df_today["High"].iloc[-1])
+        today_low = float(df_today["Low"].iloc[-1])
+        prev_close = float(df_today["Close"].iloc[-2])
+        today_volume = int(df_today["Volume"].iloc[-1])
         
         raw_levels = {
             "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
@@ -165,29 +165,27 @@ else:
 
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully to your Telegram Bot Channel!")
+        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully to your Telegram Bot Profile!")
         if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
-        else: st.sidebar.error("❌ બોટ સ્ટાર્ટ કરો.")
+        else: st.sidebar.error("❌ બોટ સ્ટાર્ટ કરો અથવા ચેટ આઈડી ચેક કરો.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     
-    # 🛠️ સચોટ ફિક્સ: સિંગલ-લાઈન લૂપ વડે કૌંસની ભૂલ જડમૂળમાંથી ફિક્સ કરી દીધી
-    raw_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items()]
-    index_results = [res for res in raw_results if res is not None]
+    # 🛡️ ૧૦ ઇન્ડાઇસિસ લાઇન-બાય-લાઇન સેફ લોડિંગ
+    index_results = []
+    for name, ticker in all_market_indices.items():
+        res = analyze_index_daily(ticker, name)
+        if res is not None: index_results.append(res)
     
     if len(index_results) > 0:
         st.dataframe(pd.DataFrame(index_results), use_container_width=True)
     else:
-        st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
+        st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ રહ્યો છે... કૃપા કરીને પેજ રિફ્રેશ કરો.")
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu")
 
-    user_choice = st.selectbox(
-        "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:",
-        suggestions_pool,
-        index=0
-    )
+    user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:", suggestions_pool, index=0)
 
     if user_choice and user_choice != "SELECT STOCK":
         search_query = user_choice.strip().upper()
@@ -195,5 +193,3 @@ else:
 
         stock_res = analyze_stock_yearly(resolved_ticker)
         if stock_res:
-            st.markdown(f"## 🎉 {search_query} Matrix Summary")
-            col1, col2, col3, col4 = st.columns(4)
