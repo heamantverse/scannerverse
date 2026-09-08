@@ -141,12 +141,10 @@ if check_password():
 
             if timeframe == "Daily":
                 target_df = df.iloc[-2]
-                o, h, l, c = (
-                    float(target_df["Open"]),
-                    float(target_df["High"]),
-                    float(target_df["Low"]),
-                    float(target_df["Close"]),
-                )
+                o = float(target_df["Open"])
+                h = float(target_df["High"])
+                l = float(target_df["Low"])
+                c = float(target_df["Close"])
                 v = int(target_df["Volume"])
                 high_bound, low_bound = h, l
             elif timeframe == "Weekly":
@@ -154,12 +152,10 @@ if check_password():
                     {"Open": "first", "High": "max", "Low": "min", "Close": "last", "Volume": "sum"}
                 )
                 target_df = df_weekly.iloc[-2]
-                o, h, l, c = (
-                    float(target_df["Open"]),
-                    float(target_df["High"]),
-                    float(target_df["Low"]),
-                    float(target_df["Close"]),
-                )
+                o = float(target_df["Open"])
+                h = float(target_df["High"])
+                l = float(target_df["Low"])
+                c = float(target_df["Close"])
                 v = int(target_df["Volume"])
                 high_bound, low_bound = h, l
             else:
@@ -286,3 +282,5 @@ if check_password():
                 col_a, col_b = st.columns(2)
 
                 with col_a:
+                    st.markdown(f"### 📊 Historical {selected_timeframe} Candle Stats")
+                    st.info(f"**Live Market Spot:** ₹{deep_res['Current Price']}")
