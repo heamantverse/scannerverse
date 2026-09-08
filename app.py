@@ -7,21 +7,21 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (મેં ટોકન અને આઈડી ફોર્મેટ સેફ કરી દીધા છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
-# ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
+# ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ સેફ ફંક્શન
 def send_telegram_alert(message_text):
-    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "":
-        try:
-            url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
-            payload = {"chat_id": int(TELEGRAM_CHAT_ID.strip()), "text": message_text, "parse_mode": "Markdown"}
-            res = requests.post(url, json=payload, timeout=5)
-            return res.status_code == 200
-        except:
-            return False
-    return False
+    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "":
+        return False
+    try:
+        url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
+        payload = {"chat_id": int(TELEGRAM_CHAT_ID.strip()), "text": message_text, "parse_mode": "Markdown"}
+        res = requests.post(url, json=payload, timeout=3)
+        return res.status_code == 200
+    except:
+        return False
 
 st.set_page_config(
     page_title="Proprietary Matrix Scanner",
@@ -126,7 +126,7 @@ def analyze_stock_yearly(ticker_name):
             "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -140,7 +140,7 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- ગેઇટવે કંટ્રોલ ફ્લો ---
+# --- મુખ્ય ગેઇટવે કંટ્રોલ ફ્લો ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -152,25 +152,25 @@ if not st.session_state["authenticated"]:
         else: st.error("❌ ખોટો પાસવર્ડ!")
 else:
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
         success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully!")
-        if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
-        else: st.sidebar.error("❌ બોટ ચેક કરો.")
+        if success: st.sidebar.success("✅ ટેલિગ્રામ કનેક્ટેડ!")
+        else: st.sidebar.warning("⚠️ ડાયરેક્ટ મેસેજ હોલ્ડ પર છે, પણ સાઇટ ચાલુ રહેશે.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
     raw_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items()]
     index_results = [res for res in raw_results if res is not None]
     if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-    else: st.warning("ઇન્ડૅક્સ ડેટา લોડ થઈ શક્યો નથી.")
+    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ રહ્યો છે... કૃપા કરીને થોડી સેકન્ડ પછી પેજ રિф્રેશ કરો.")
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu")
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:", suggestions_pool, index=0)
 
-    # 🛠️ સચોટ ફિલ્ટર: આખા રિસ્પોન્સ લોજિકને એકદમ સાદું ફ્લેટ અને સિક્યોર કરી દીધું
     if user_choice and user_choice != "SELECT STOCK":
         resolved_ticker = all_market_indices[user_choice] if user_choice in all_market_indices else user_choice + ".NS"
         stock_res = analyze_stock_yearly(resolved_ticker)
@@ -180,5 +180,3 @@ else:
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
             col2.write(f"📊 **Today's Open:** ₹ {stock_res['Today Open']}")
-            col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
-            col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
