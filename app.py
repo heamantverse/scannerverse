@@ -3,7 +3,6 @@ import pandas as pd
 import streamlit as st
 import yfinance as yf
 
-# 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
 st.set_page_config(
@@ -12,7 +11,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS ડાર્ક થીમ
 st.markdown(
     """
     <style>
@@ -28,31 +26,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-def check_password():
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-    if not st.session_state["authenticated"]:
-        st.title("🔒 Security Access Required")
-        st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
-        user_password = st.text_input("Enter Private Access Password:", type="password")
-        if st.button("Access Dashboard"):
-            if user_password == CORRECT_PASSWORD:
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("❌ ખોટો પાસવર્ડ! એક્સેસ નકારવામાં આવ્યો છે.")
-        return False
-    return True
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "selected_asset" not in st.session_state:
+    st.session_state["selected_asset"] = "SELECT STOCK"
 
-if check_password():
-    # 🏛️ માર્કેટ ઇન્ડાઇસિસનું માસ્ટર મેપિંગ
+if not st.session_state["authenticated"]:
+    st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
+    st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
+    user_password = st.text_input("Enter Private Access Password:", type="password")
+    if st.button("Access Dashboard"):
+        if user_password == CORRECT_PASSWORD:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("❌ ખોટો પાસવર્ડ!")
+else:
     all_market_indices = {
         "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
         "NIFTY MIDCAP 50": "^CRSMID", "NIFTY SMALLCAP 50": "^CNXSMALL", "NIFTY IT": "^CNXIT",
         "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
     }
 
-    # 📥 સજેશન પૂલ લિસ્ટ
     suggestions_pool = [
         "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
         "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -105,9 +100,7 @@ if check_password():
                 "Core Balance Node": year_low + (span * 0.618), "Velocity Conformation Node": year_low + (span * 0.272), "Secondary Pivot Node": year_low + (span * 0.236),
                 "Ground Zero Base": year_low, "Retraction Buffer Zone": year_low - (span * 0.618), "Extrapolated Range Lower": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
-            
-            # 🛠️ "૩ ઉપર અને ૨ નીચે" પ્રોક્સિમિટી ફિલ્ટર લોજિક
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -127,43 +120,51 @@ if check_password():
             }
         except: return None
 
-    def run_dashboard():
-        st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
-        st.markdown("---")
+    st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
+    st.markdown("---")
 
-        # વિભાગ ૧: માન્ડ ઇન્ડાઇસિસ ટ્રેક લિસ્ટ
-        st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-        with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
-            index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
-            if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-            else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
+    st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
+    with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
+        index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
+        if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
+        else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
-        st.markdown("---")
-        st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
-        
-        # 🛠️ સ્માર્ટ મેમરી મેનેજમેન્ટ: છેલ્લે સર્ચ કરેલો સ્ટોક યાદ રાખવો અને સર્ચ બાર ખાલી કરવો
-        if "last_searched_stock" not in st.session_state:
-            st.session_state["last_searched_stock"] = None
+    st.markdown("---")
+    st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
+    
+    def on_change_stock():
+        selected = st.session_state.stock_selectbox
+        if selected != "SELECT STOCK":
+            st.session_state["active_searched"] = selected
+            st.session_state.stock_selectbox = "SELECT STOCK"
 
-        # ઓટો-સજેશન ડ્રોપડાઉન (જે હંમેશા ડિફોલ્ટ SELECT STOCK પર આવી જશે)
-        user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", suggestions_pool, index=0)
+    st.selectbox(
+        "સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", 
+        suggestions_pool, 
+        key="stock_selectbox",
+        on_change=on_change_stock
+    )
 
-        # જો યુઝરે નવો સ્ટોક સિલેક્ટ કર્યો હોય, તો તેને મેમરીમાં સ્ટોર કરો
-        if user_choice and user_choice != "SELECT STOCK":
-            st.session_state["last_searched_stock"] = user_choice
-            # સર્ચ બારને ઓટોમેટિક બ્લેન્ક કરવા માટે પેજને રીબૂટ (Rerun) કરવું
-            st.rerun()
+    if "active_searched" in st.session_state and st.session_state["active_searched"]:
+        search_query = st.session_state["active_searched"].strip().upper()
+        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        # 🎯 ઓટો-બ્લેન્ક મેજિક: ડેટા લોડ થઈને નીચે દેખાશે, પણ ઉપરનું સર્ચ બોક્સ પાછું ખાલી થઈ ગયું હશે!
-        active_target = st.session_state["last_searched_stock"]
+        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+            stock_res = analyze_stock_yearly(resolved_ticker)
+            if stock_res:
+                st.markdown(f"## 🎉 {search_query} Matrix Summary")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
+                col2.write(f"**Year Open / Close:** ₹ {stock_res['Open']} / ₹ {stock_res['Close']}")
+                col3.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
+                
+                st.markdown("---")
+                st.markdown(f"### 🦅 Symmetrical Proximity Matrix (3 Up / 2 Down Levels)")
+                levels_data = [{"Matrix Structural Node": name, "Calculated Threshold": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
+                st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
+            else:
+                st.error("❌ ડેટા મળ્યો નથી.")
+    else:
+        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક પસંદ કરો.")
 
-        if active_target:
-            search_query = active_target.strip().upper()
-            resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
-
-            with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
-                stock_res = analyze_stock_yearly(resolved_ticker)
-                if stock_res:
-                    st.markdown(f"## 🎉 {search_query} Matrix Summary")
-                    col1, col2, col3 = st.columns(3)
