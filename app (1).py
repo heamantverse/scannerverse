@@ -6,14 +6,14 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🖤 ૧. વેબસાઇટને કાયમી ડાર્ક મોડ અને વાઇડ લેઆઉટમાં સેટ કરવી
+# 🖤 વેબસાઇટને કાયમી ડાર્ક મોડ અને વાઇડ લેઆઉટમાં સેટ કરવી
 st.set_page_config(
     page_title="Proprietary Matrix Scanner",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો
+# 🛠️ એરર ફિક્સ: કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો (unsafe_allow_html સાથે)
 st.markdown(
     """
     <style>
@@ -23,7 +23,7 @@ st.markdown(
     .stSelectbox>div>div>div { background-color: #262730; color: white; }
     </style>
     """,
-    unsafe_html=True
+    unsafe_allow_html=True
 )
 
 # --- લૉગિન સિસ્ટમ ---
@@ -51,7 +51,6 @@ if check_password():
     # 📥 ઇન-બિલ્ટ F&O અને હાઇ-વોલ્યુમ (>2 Lakh Daily) માસ્ટર ડેટાબેઝ
     @st.cache_data
     def load_market_universe():
-        # તમામ મુખ્ય F&O લિક્વિડ સ્ટોક્સ
         fno_stocks = [
             "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
             "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
@@ -67,12 +66,10 @@ if check_password():
             "ZEEL"
         ]
         
-        # હાઇ-વોલ્યુમ ટ્રેડિંગ સ્ટોક્સ (ડેઇલી ૨ લાખથી વધુ વોલ્યુમ વાળા સ્મોલ/મિડકેપ)
         high_volume_nodes = [
             "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
             "DELHIVERY", "MANAPPURAM", "L&TFH", "NCC", "NYKAA", "UCOBANK", "CUB", "RAMCOCEM", "SOBHA", "SONACOMS"
         ]
-        
         return fno_stocks, high_volume_nodes
 
     @st.cache_data
@@ -87,7 +84,6 @@ if check_password():
             "NIFTY PHARMA": "^CNXPHARMA",
             "NIFTY METAL": "^CNXMETAL",
         }
-        # ડેશબોર્ડ ક્વિક ટ્રેક લિસ્ટ
         constituent_groups = {
             "NIFTY 50": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "SBIN.NS"],
             "NIFTY BANK": ["SBIN.NS", "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS"]
@@ -158,7 +154,7 @@ if check_password():
                 o, h, l, c = float(target_df["Open"]), float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
                 v = int(target_df["Volume"])
             else:
-                o, h, l, c = float(df["Open"].iloc[0]), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
+                o, h, l, c = float(df["Open"].iloc), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
                 v = int(df["Volume"].sum())
 
             span = h - l
@@ -182,10 +178,8 @@ if check_password():
     index_tickers, constituent_groups = load_indices_config()
     fno_list, high_vol_list = load_market_universe()
 
-    # 🎛️ ડાબી બાજુનું ફિલ્ટર સેક્શન
     st.sidebar.header("🎯 Filter Matrix")
     
-    # 💥 નવું એસેટ ક્લાસ ફિલ્ટર (F&O vs High Volume)
     asset_class = st.sidebar.selectbox(
         "Choose Asset Class (એસેટ કેટેગરી):", 
         ["All F&O Heavyweights", "High Volume Node (>2 Lakh)"]
@@ -217,3 +211,8 @@ if check_password():
     df_results = pd.DataFrame(results)
     if not df_results.empty:
         df_final = df_results if filter_node == "All Levels" else df_results[df_results["Matrix Node Status"].str.contains(filter_node, na=False, regex=False)]
+        st.dataframe(df_final[["Asset Symbol", "Current Price", "Structural Status", "Matrix Node Status", "Prev Open", "Prev High", "Prev Low", "Prev Close", "Prev Volume"]], use_container_width=True)
+
+    st.markdown("---")
+
+    # 🎯 ૩. એડવાન્સ સિંગલ એસેટ ડીપ એનાલિસિસ
