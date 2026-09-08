@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો સાચો આઈડી અને ટોકન અહીં લોક છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -29,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS ડાર્ક થીમ
+# கસ્ટમ CSS ડાર્ક થીમ
 st.markdown(
     """
     <style>
@@ -98,7 +98,6 @@ def analyze_stock_yearly(ticker_name):
         df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
         if df_hist.empty or len(df_hist) < 20: return None
         if isinstance(df_hist.columns, pd.MultiIndex): df_hist.columns = df_hist.columns.get_level_values(0)
-        
         year_high, year_low = float(df_hist["High"].max()), float(df_hist["Low"].min())
         span = year_high - year_low
         
@@ -133,7 +132,44 @@ def analyze_stock_yearly(ticker_name):
         }
     except: return None
 
-# --- ગેટવે કંટ્રોલ ---
+# 🔒 એરર સોલ્યુશન: આખો સર્ચ ડેટા એક પર્ફેક્ટ એડવાન્સ સેક્શન ફંક્શનમાં લોક કરી દીધો
+def render_search_section(search_query):
+    resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
+    stock_res = analyze_stock_yearly(resolved_ticker)
+    
+    if stock_res:
+        st.markdown(f"## 🎉 {search_query} Matrix Summary")
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
+        col2.write(f"📊 **Today's Open:** ₹ {stock_res['Today Open']}")
+        col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
+        col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
+        st.write(f"🗒️ **Previous Close:** ₹ {stock_res['Prev Close']} | **Today's Volume:** {stock_res['Volume']:,}")
+        
+        st.markdown("---")
+        st.subheader("🦅 Symmetrical Price Matrix")
+        
+        levels_list = []
+        current_spot = stock_res['Current Price']
+        telegram_msg = f"🦅 *MATRIX SCANNER ALERT* 🦅\n\n*Stock:* {search_query}\n*Live Price:* ₹{current_spot:,.2f}\n\n*Nearby Levels:*\n"
+        
+        for name, val in stock_res["Calculated Levels"].items():
+            distance_pct = ((val - current_spot) / current_spot) * 100
+            direction_sign = "+" if distance_pct >= 0 else ""
+            levels_list.append({
+                "Easy Structural Level": name,
+                "Calculated Price": f"₹ {val:,.2f}",
+                "Distance from Live Price": f"{direction_sign}{distance_pct:.2f} %"
+            })
+            telegram_msg += f"• {name}: ₹{val:,.2f} ({direction_sign}{distance_pct:.2f}%)\n"
+        
+        st.dataframe(pd.DataFrame(levels_list), use_container_width=True)
+        telegram_msg += "\n⚠️ Educational proprietary thresholds."
+        send_telegram_alert(telegram_msg)
+    else:
+        st.error(f"❌ '{search_query}' માટે કોઈ ડેટા મળ્યો નથી.")
+
+# --- મેઈન ફ્લો કંટ્રોલ ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
     st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
@@ -145,43 +181,3 @@ if not st.session_state["authenticated"]:
         else: st.error("❌ ખોટો પાસવર્ડ!")
 else:
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
-    st.markdown("---")
-
-    st.sidebar.subheader("🤖 Connection Diagnostics")
-    if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now successfully linked to this Telegram Profile ID!")
-        if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો! ટેલિગ્રામ ચેક કરો.")
-        else: st.sidebar.error("❌ મેસેજ ન ગયો. પ્લીઝ પર્સનલ બોટ પર જઈને Start દબાવો.")
-
-    # ૧. ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
-    st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
-    if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
-
-    st.markdown("---")
-    st.subheader("🔍 Asset Search Menu (With Suggestions)")
-
-    def handle_selectbox_change():
-        selected = st.session_state.stock_selectbox_key
-        if selected != "SELECT STOCK":
-            st.session_state["final_search_query"] = selected
-
-    st.selectbox(
-        "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો (સજેશન જોવા માટે અક્ષર ટાઈપ કરો):",
-        suggestions_pool,
-        key="stock_selectbox_key",
-        index=0,
-        on_change=handle_selectbox_change
-    )
-
-    search_query_active = st.session_state["final_search_query"]
-
-    if search_query_active:
-        search_query = search_query_active.strip().upper()
-        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
-
-        # 🛠️ એરર ફિક્સ: st.spinner વાળા કન્ફ્લિક્ટ બ્લોકને સાદો ફ્લેટ કરી દીધો
-        stock_res = analyze_stock_yearly(resolved_ticker)
-        if stock_res:
