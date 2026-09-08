@@ -42,7 +42,7 @@ all_market_indices = {
     "NIFTY METAL": "^CNXMETAL"
 }
 
-# 📥 ઓટો-સજેશન માટે ૨૦૦+ પાવરફુલ મોમેન્ટમ સ્ટોક્સનું લિસ્ટ
+# 📥 ઓટો-સજેશન માટે સ્ટોક્સનું લિસ્ટ
 suggestions_pool = [
     "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
     "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -53,8 +53,8 @@ suggestions_pool = [
     "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
     "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
     "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
-    "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
+    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NCC", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
+    "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
     "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
     "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", "DELHIVERY", "MANAPPURAM"
 ]
@@ -96,8 +96,6 @@ def analyze_stock_yearly(ticker_name):
         year_high, year_low = float(df["High"].max()), float(df["Low"].min())
         current_price = float(df["Close"].iloc[-1])
         span = year_high - year_low
-        
-        # 🎯 કસ્ટમ ૧૦ લેવલ્સ (0, 0.236, 0.272, 0.618, -0.618, 1.618, -1.618, -2, 2, અને 1)
         levels = {
             "Stratosphere Extension Max [2.0]": year_low + (span * 2.0),
             "Horizon Major Axis [1.618]": year_low + (span * 1.618),
@@ -127,8 +125,6 @@ def run_dashboard():
     st.markdown("---")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે.")
-    
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
         if len(index_results) > 0:
@@ -138,19 +134,16 @@ def run_dashboard():
 
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
-    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે.")
-    
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", suggestions_pool, index=0)
 
     if user_choice and user_choice != "SELECT STOCK":
         search_query = user_choice.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક (Yearly) સંપૂર્ણ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
             stock_res = analyze_stock_yearly(resolved_ticker)
             if stock_res:
                 st.markdown(f"## 🎉 {search_query} Matrix Summary")
-                
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
                 col2.write(f"**Year Open / Close:** ₹ {stock_res['Open']} / ₹ {stock_res['Close']}")
@@ -165,21 +158,30 @@ def run_dashboard():
                 levels_data = [{"Matrix Structural Node": name, "Calculated Threshold": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
                 st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
             else:
-                st.error("❌ આ સ્ટોક માટે કોઈ ડેટા મળ્યો નથી.")
+                st.error("❌ ડેટા મળ્યો નથી.")
     else:
-        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક કે ઇન્ડેક્સ પસંદ કરો, અત્યારે નીચે કોઈ ડેટા લોડ કરેલો નથી.")
+        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક પસંદ કરો.")
 
     st.markdown("---")
     if st.sidebar.button("Log Out"):
         st.session_state["authenticated"] = False
         st.rerun()
 
-# --- મેઈન એન્ટ્રી પોઈન્ટ અને પાસવર્ડ ચેક ---
+# --- મેઈન એન્ટ્રી પોઈન્ટ (ફ્લેટ પ્લેઇન લેઆઉટ - ઓટોમેટિક સામે જ દેખાશે) ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    st.markdown("<h1 style='text-align: center; color: #00ffaa;'>🔒 Security Access Required</h1>", unsafe_allow_html=True)
-    st.write("<p style='text-align: center; color: #8892b0;'>આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.</p>", unsafe_allow_html=True)
+    st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
+    st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
     
-    # 🛠️ એરર ફિક્સ: st.columns(3) માં સાચી સંખ્યા સેટ કરી દીધી
+    # 🛠️ એરર ફિક્સ: બિલકુલ સાદું અને ડાયરેક્ટ ઇનપુટ બોક્સ, જે તરત જ સામે ખુલી જશે
+    user_password = st.text_input("Enter Private Access Password:", type="password")
+    if st.button("Access Dashboard"):
+        if user_password == CORRECT_PASSWORD:
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("❌ ખોટો પાસવર્ડ! એક્સેસ નકારવામાં આવ્યો છે.")
+else:
+    run_dashboard()
