@@ -7,7 +7,7 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (મેં તમારો નવો પર્સનલ આઈડી લાઈન ૧૨ પર કૌંસ વગર લોક કરી દીધો છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન અહીં લોક છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
 TELEGRAM_CHAT_ID = "381187243"
 
@@ -66,7 +66,7 @@ suggestions_pool = [
     "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
     "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
     "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
     "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
     "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
     "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
@@ -118,7 +118,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -152,7 +152,7 @@ else:
     if st.sidebar.button("⚡ Test Telegram Alert"):
         success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now successfully linked to this Telegram Profile ID!")
         if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો! ટેલિગ્રામ ચેક કરો.")
-        else: st.sidebar.error("❌ મેસેજ ન ગયો. બોટ સ્ટાર્ટ કરો.")
+        else: st.sidebar.error("❌ મેસેજ ન ગયો. પ્લીઝ પર્સનલ બોટ પર જઈને Start દબાવો.")
 
     # ૧. ઇન્ડાઇસિસ માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
@@ -183,3 +183,4 @@ else:
         search_query = search_query_active.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
+        with st.spinner(f"'{resolved_ticker}' નો ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
