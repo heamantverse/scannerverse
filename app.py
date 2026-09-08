@@ -166,12 +166,19 @@ else:
 
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully!")
+        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully to your Telegram Profile ID!")
         if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
         else: st.sidebar.error("❌ બોટ સ્ટાર્ટ કરો.")
 
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
+    
+    # 🛠️ સચોટ ફિક્સ: અધૂરો લૂપ કૌંસ અહીં સંપૂર્ણ સાચો સેટ કરી દીધો છે
+    index_results = []
+    for name, ticker in all_market_indices.items():
+        res = analyze_index_daily(ticker, name)
+        if res is not None:
+            index_results.append(res)
+            
     if len(index_results) > 0:
         st.dataframe(pd.DataFrame(index_results), use_container_width=True)
     else:
@@ -180,6 +187,4 @@ else:
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu")
 
-    # 🛠️ એરર ફિક્સ: ઓટો-રીસેટના જટિલ handle_change ફંક્શનને હટાવીને સ્ટેબલ સેશન લોજિક કરી દીધું
     user_choice = st.selectbox(
-        "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:",
