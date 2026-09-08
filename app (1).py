@@ -6,14 +6,13 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🖤 વેબસાઇટને કાયમી ડાર્ક મોડ અને વાઇડ લેઆઉટમાં સેટ કરવી
 st.set_page_config(
     page_title="Proprietary Matrix Scanner",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS દ્વારા પ્રીમિયમ ડાર્ક થીમ લુક આપવો
+# કસ્ટમ CSS ડાર્ક થીમ
 st.markdown(
     """
     <style>
@@ -26,7 +25,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- લૉગિન સિસ્ટમ ---
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state["authenticated"] = False
@@ -45,10 +43,8 @@ def check_password():
         return False
     return True
 
-
 if check_password():
 
-    # 📥 ઇન-બિલ્ટ માસ્ટર લિસ્ટ
     @st.cache_data
     def load_market_universe():
         fno_stocks = [
@@ -62,8 +58,7 @@ if check_password():
             "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
             "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
             "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "TATACOMM",
-            "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS",
-            "ZEEL"
+            "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL"
         ]
         high_volume_nodes = [
             "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
@@ -74,14 +69,8 @@ if check_password():
     @st.cache_data
     def load_indices_config():
         index_mapping = {
-            "NIFTY 50": "^NSEI",
-            "NIFTY BANK": "^NSEBANK",
-            "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
-            "NIFTY IT": "^CNXIT",
-            "NIFTY AUTO": "^CNXAUTO",
-            "NIFTY FMCG": "^CNXFMCG",
-            "NIFTY PHARMA": "^CNXPHARMA",
-            "NIFTY METAL": "^CNXMETAL",
+            "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+            "NIFTY IT": "^CNXIT", "NIFTY AUTO": "^CNXAUTO", "NIFTY FMCG": "^CNXFMCG", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY METAL": "^CNXMETAL"
         }
         constituent_groups = {
             "NIFTY 50": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "SBIN.NS"],
@@ -107,12 +96,7 @@ if check_password():
             }
 
             short_ma = df["Close"].rolling(window=5).mean().iloc[-1]
-            if current_price > levels["Core Balance Node"] and current_price > short_ma:
-                momentum = "Ascending Momentum Capable (🟢)"
-            elif current_price < levels["Core Balance Node"] and current_price < short_ma:
-                momentum = "Descending Momentum Capable (🔴)"
-            else:
-                momentum = "Consolidation Node (🟡)"
+            momentum = "Ascending Momentum Capable (🟢)" if current_price > levels["Core Balance Node"] and current_price > short_ma else "Descending Momentum Capable (🔴)" if current_price < levels["Core Balance Node"] and current_price < short_ma else "Consolidation Node (🟡)"
 
             closest_node = "In-Between Zones"
             min_diff = float("inf")
@@ -134,7 +118,6 @@ if check_password():
             }
         except: return None
 
-    # 🛠️ એડવાન્સ મોડિફાઈડ ડીપ એન્જિન (આખા ૧૪+ સિક્રેટ લેવલ્સનો Whole Data ગણવા માટે)
     def analyze_deep_asset(ticker, timeframe):
         try:
             fetch_period = "5d" if timeframe == "Daily" else "3mo" if timeframe == "Weekly" else "1y"
@@ -154,12 +137,11 @@ if check_password():
                 o, h, l, c = float(target_df["Open"]), float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
                 v = int(target_df["Volume"])
             else:
-                o, h, l, c = float(df["Open"].iloc), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
+                # 🛠️ એરર ફિક્સ: .iloc[-1] ઉમેર્યું ઓપન અને ક્લોઝ પ્રાઇસ માટે
+                o, h, l, c = float(df["Open"].iloc[-1]), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
                 v = int(df["Volume"].sum())
 
             span = h - l
-            
-            # 🎯 ઇમેજ મુજબના તમામ પોઝિટિવ અને નેગેટિવ સપ્રમાણ (Whole) લેવલ્સ
             levels = {
                 "Macro Boundary High (4.236)": l + (span * 4.236),
                 "Upper Multiplier Ex (3.414)": l + (span * 3.414),
@@ -196,7 +178,6 @@ if check_password():
     selected_index = st.sidebar.selectbox("Track Index Structure", list(index_tickers.keys()))
     filter_node = st.sidebar.selectbox("Filter by Matrix Node", ["All Levels", "Stratosphere Zone", "Horizon Axis", "Core Balance Node"])
 
-    # ૧. ઇન્ડૅક્સ ડિસ્પ્લે
     st.subheader(f"📈 Index Structure Analysis: {selected_index}")
     idx_res = analyze_asset(index_tickers[selected_index])
     if idx_res:
@@ -207,3 +188,11 @@ if check_password():
 
     st.markdown("---")
 
+    st.subheader(f"📋 Constituent Target Matrix")
+    stock_scan_list = constituent_groups.get(selected_index, ["RELIANCE.NS", "TCS.NS"])
+    results = []
+    for stock in stock_scan_list:
+        res = analyze_asset(stock)
+        if res: res["Asset Symbol"] = stock; results.append(res)
+    df_results = pd.DataFrame(results)
+    if not df_results.empty:
