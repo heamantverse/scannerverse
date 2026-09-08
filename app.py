@@ -13,7 +13,7 @@ TELEGRAM_CHAT_ID = "381187243"
 
 # ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
 def send_telegram_alert(message_text):
-    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g":
+    if TELEGRAM_TOKEN and TELEGRAM_TOKEN != "અહીં_તમારો_ટેલિગ્રામ_ટોકન_નંબર_પેસ્ટ_કરો":
         try:
             url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
             payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message_text, "parse_mode": "Markdown"}
