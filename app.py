@@ -44,39 +44,33 @@ def check_password():
     return True
 
 if check_password():
+    # 📥 ઇન-બિલ્ટ માસ્ટર લિસ્ટ
+    fno_list = [
+        "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
+        "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
+        "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
+        "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
+        "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
+        "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
+        "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
+        "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
+        "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+        "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "TATACOMM",
+        "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL"
+    ]
+    high_vol_list = [
+        "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
+        "DELHIVERY", "MANAPPURAM", "L&TFH", "NCC", "NYKAA", "UCOBANK", "CUB", "RAMCOCEM", "SOBHA", "SONACOMS"
+    ]
 
-    @st.cache_data
-    def load_market_universe():
-        fno_stocks = [
-            "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
-            "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
-            "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
-            "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
-            "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
-            "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
-            "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
-            "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-            "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
-            "OIL", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "SAIL", "SUNTV", "SUPREMEIND", "TATACOMM",
-            "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL"
-        ]
-        high_volume_nodes = [
-            "SUZLON", "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", 
-            "DELHIVERY", "MANAPPURAM", "L&TFH", "NCC", "NYKAA", "UCOBANK", "CUB", "RAMCOCEM", "SOBHA", "SONACOMS"
-        ]
-        return fno_stocks, high_volume_nodes
-
-    @st.cache_data
-    def load_indices_config():
-        index_mapping = {
-            "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
-            "NIFTY IT": "^CNXIT", "NIFTY AUTO": "^CNXAUTO", "NIFTY FMCG": "^CNXFMCG", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY METAL": "^CNXMETAL"
-        }
-        constituent_groups = {
-            "NIFTY 50": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "SBIN.NS"],
-            "NIFTY BANK": ["SBIN.NS", "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS"]
-        }
-        return index_mapping, constituent_groups
+    index_tickers = {
+        "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+        "NIFTY IT": "^CNXIT", "NIFTY AUTO": "^CNXAUTO", "NIFTY FMCG": "^CNXFMCG", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY METAL": "^CNXMETAL"
+    }
+    constituent_groups = {
+        "NIFTY 50": ["RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", "SBIN.NS"],
+        "NIFTY BANK": ["SBIN.NS", "HDFCBANK.NS", "ICICIBANK.NS", "AXISBANK.NS", "KOTAKBANK.NS"]
+    }
 
     def analyze_asset(ticker):
         try:
@@ -96,7 +90,12 @@ if check_password():
             }
 
             short_ma = df["Close"].rolling(window=5).mean().iloc[-1]
-            momentum = "Ascending Momentum Capable (🟢)" if current_price > levels["Core Balance Node"] and current_price > short_ma else "Descending Momentum Capable (🔴)" if current_price < levels["Core Balance Node"] and current_price < short_ma else "Consolidation Node (🟡)"
+            if current_price > levels["Core Balance Node"] and current_price > short_ma:
+                momentum = "Ascending Momentum Capable (🟢)"
+            elif current_price < levels["Core Balance Node"] and current_price < short_ma:
+                momentum = "Descending Momentum Capable (🔴)"
+            else:
+                momentum = "Consolidation Node (🟡)"
 
             closest_node = "In-Between Zones"
             min_diff = float("inf")
@@ -169,9 +168,6 @@ if check_password():
     st.title("🦅 Proprietary Structural Matrix Scanner (PRO)")
     st.markdown("---")
 
-    index_tickers, constituent_groups = load_indices_config()
-    fno_list, high_vol_list = load_market_universe()
-
     st.sidebar.header("🎯 Filter Matrix")
     asset_class = st.sidebar.selectbox("Choose Asset Class", ["All F&O Heavyweights", "High Volume Node (>2 Lakh)"])
     selected_index = st.sidebar.selectbox("Track Index Structure", list(index_tickers.keys()))
@@ -198,3 +194,7 @@ if check_password():
             
     df_results = pd.DataFrame(results)
     if not df_results.empty:
+        df_final = df_results if filter_node == "All Levels" else df_results[df_results["Matrix Node Status"].str.contains(filter_node, na=False, regex=False)]
+        if df_final.empty:
+            st.warning("આ સ્તરે હાલ કોઈ ડેટા મેચ થતો નથી.")
+        else:
