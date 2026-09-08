@@ -23,7 +23,6 @@ st.markdown(
     .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     div[data-testid="stMetricValue"] { color: #00ffaa !important; font-size: 32px; font-weight: bold; }
-    .css-1r6slb0 { background-color: #121620; padding: 20px; border-radius: 8px; border: 1px solid #1f2430; }
     </style>
     """,
     unsafe_allow_html=True
@@ -69,11 +68,9 @@ def analyze_index_daily(ticker_name, display_name):
         h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
         current_price = float(df["Close"].iloc[-1])
         span = h - l
-        
-        # મુખ્ય ૧૦ લેવલ્સનું સિક્રેટ લોજિક (આંકડા વગર)
         levels = {
-            "Macro Boundary High": l + (span * 2.0),
-            "Primary Trajectory Axis": l + (span * 1.618),
+            "Stratosphere Zone": l + (span * 2.0),
+            "Horizon Major Axis": l + (span * 1.618),
             "Core Balance Node": l + (span * 0.618),
             "Velocity Confirmation Node": l + (span * 0.272),
             "Secondary Pivot Node": l + (span * 0.236),
@@ -100,7 +97,7 @@ def analyze_stock_yearly(ticker_name):
         current_price = float(df["Close"].iloc[-1])
         span = year_high - year_low
         
-        # 🎯 પ્રો ફિલ્ટર: તમે કીધેલા જ કસ્ટમ ૧૦ લેવલ્સ (0, 0.236, 0.272, 0.618, -0.618, 1.618, -1.618, -2, 2, અને 1)
+        # 🎯 કસ્ટમ ૧૦ લેવલ્સ (0, 0.236, 0.272, 0.618, -0.618, 1.618, -1.618, -2, 2, અને 1)
         levels = {
             "Stratosphere Extension Max [2.0]": year_low + (span * 2.0),
             "Horizon Major Axis [1.618]": year_low + (span * 1.618),
@@ -125,14 +122,12 @@ def analyze_stock_yearly(ticker_name):
     except: return None
 
 def run_dashboard():
-    # 💎 આધુનિક હેડર સેક્શન
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # 📊 વિભાગ ૧: તમામ ઇન્ડાઇસિસનો માસ્ટર ટ્રેક લિસ્ટ (Daily Base Nearby)
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    st.write("આ ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને લાઈવ રેટની **સૌથી નજીકનું લેવલ** બતાવે છે.")
+    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે.")
     
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items() if analyze_index_daily(ticker, name) is not None]
@@ -142,10 +137,8 @@ def run_dashboard():
             st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
 
     st.markdown("---")
-    
-    # 🔍 વિભાગ ૨: ઓટો-સજેશન સર્ચ મેનુ (સુધારેલો ક્લીન લુક)
     st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
-    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે. સિલેક્ટ કરતા જ તેનો **Yearly હોલ ડેટા** દેખાશે.")
+    st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે.")
     
     user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):", suggestions_pool, index=0)
 
@@ -158,7 +151,6 @@ def run_dashboard():
             if stock_res:
                 st.markdown(f"## 🎉 {search_query} Matrix Summary")
                 
-                # કલરફુલ પ્રીમિયમ કાર્ડ ડિઝાઇન (Candle Stats)
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
                 col2.write(f"**Year Open / Close:** ₹ {stock_res['Open']} / ₹ {stock_res['Close']}")
@@ -169,9 +161,7 @@ def run_dashboard():
                 c_b.write(f"🔴 **Year Low Bound:** ₹ {stock_res['Low']}")
                 
                 st.markdown("---")
-                # 🎯 શુદ્ધ ૧૦ સિક્રેટ લેવલ્સ વાળું નવું ક્લીન ટેબલ
                 st.markdown(f"### 🦅 Complete Symmetrical Matrix (1-Year Levels)")
-                
                 levels_data = [{"Matrix Structural Node": name, "Calculated Threshold": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
                 st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
             else:
@@ -180,3 +170,16 @@ def run_dashboard():
         st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક કે ઇન્ડેક્સ પસંદ કરો, અત્યારે નીચે કોઈ ડેટા લોડ કરેલો નથી.")
 
     st.markdown("---")
+    if st.sidebar.button("Log Out"):
+        st.session_state["authenticated"] = False
+        st.rerun()
+
+# --- મેઈન એન્ટ્રી પોઈન્ટ અને પાસવર્ડ ચેક ---
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    st.markdown("<h1 style='text-align: center; color: #00ffaa;'>🔒 Security Access Required</h1>", unsafe_allow_html=True)
+    st.write("<p style='text-align: center; color: #8892b0;'>આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.</p>", unsafe_allow_html=True)
+    
+    # 🛠️ એરર ફિક્સ: st.columns(3) માં સાચી સંખ્યા સેટ કરી દીધી
