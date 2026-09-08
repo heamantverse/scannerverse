@@ -137,7 +137,6 @@ if check_password():
                 o, h, l, c = float(target_df["Open"]), float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
                 v = int(target_df["Volume"])
             else:
-                # 🛠️ એરર ફિક્સ: .iloc[-1] ઉમેર્યું ઓપન અને ક્લોઝ પ્રાઇસ માટે
                 o, h, l, c = float(df["Open"].iloc[-1]), float(df["High"].max()), float(df["Low"].min()), float(df["Close"].iloc[-1])
                 v = int(df["Volume"].sum())
 
@@ -193,6 +192,9 @@ if check_password():
     results = []
     for stock in stock_scan_list:
         res = analyze_asset(stock)
-        if res: res["Asset Symbol"] = stock; results.append(res)
+        if res:
+            res["Asset Symbol"] = stock
+            results.append(res)
+            
     df_results = pd.DataFrame(results)
     if not df_results.empty:
