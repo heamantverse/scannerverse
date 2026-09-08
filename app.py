@@ -28,7 +28,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# --- સેશન સ્ટેટ પરમેનન્ટ મેમરી (કન્ફ્લિક્ટ અટકાવવા માટે) ---
+# --- સેશન સ્ટેટ પરમેનન્ટ મેમરી ---
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "final_search_query" not in st.session_state:
@@ -85,7 +85,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -125,22 +125,18 @@ else:
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu (Smart Auto-Reset)")
 
-    # 🛠️ ઓટો-બ્લેન્ક ટેક્સ્ટ ઇનપુટ બોક્સ લોજિક
     def handle_search_clear():
         typed_val = st.session_state.text_search_input
         if typed_val.strip() != "":
             st.session_state["final_search_query"] = typed_val.strip()
-            # ટેક્સ્ટ બોક્સને કાયમી માટે ક્લીન (Blank) કરી દેવું
             st.session_state.text_search_input = ""
 
-    # આ વ્હાઇટ બોક્સ સર્ચ કર્યા પછી આપોઆપ તરત જ ખાલી થઈ જશે!
     st.text_input(
         "સ્ટોક અથવા ઇન્ડેક્સનું નામ લખો (e.g., TCS, SUZLON, NIFTY 50) અને Enter દબાવો:",
         key="text_search_input",
         on_change=handle_search_clear
     )
 
-    # બેકએન્ડમાં ડેટા સેફ રહેશે અને નીચે પ્રિન્ટ થશે
     search_query_active = st.session_state["final_search_query"]
 
     if search_query_active:
@@ -161,7 +157,6 @@ else:
                 st.markdown("---")
                 st.markdown(f"### 🦅 Symmetrical Price Matrix")
                 
-                # 🎯 ૩ ઉપર અને ૨ નીચે લેવલ્સ નામ, કિંમત અને ટકાવારી (%) અંતર સાથે ૧૦૦% દેખાશે
                 levels_list = []
                 current_spot = stock_res['Current Price']
                 for name, val in stock_res["Calculated Levels"].items():
@@ -174,12 +169,21 @@ else:
                     })
                 st.dataframe(pd.DataFrame(levels_list), use_container_width=True)
             else:
-                st.error(f"❌ '{user_search}' માટે કોઈ ડેટા મળ્યો નથી. કૃપા કરીને સાચો સિમ્બોલ ટાઈપ કરો.")
+                st.error(f"❌ '{search_query}' માટે કોઈ ડેટા મળ્યો નથી.")
     else:
         st.info("💡 ઉપર સર્ચ બોક્સમાં કોઈ સ્ટોકનું નામ લખીને Enter દબાવો.")
+
+    # 🔒 સુધારેલું પાવરફુલ કાનૂની ડિસ્ક્લેમર (BUY/SELL પ્રતિબંધ સાથે)
+    st.markdown("---")
+    st.markdown("<h4 style='color: #ff4b4b !important;'>⚠️ Legal Disclaimer</h4>", unsafe_allow_html=True)
+    st.caption(
+        "This platform is a pure mathematical calculation matrix based on historical market parameters. "
+        "The calculations and levels shown here are strictly for educational and analytical purposes only. "
+        "PLEASE NOTE: These mathematical levels are NOT intended for BUY or SELL signals. We do NOT generate trading calls, buy/sell entry triggers, or investment tips. "
+        "This platform is NOT SEBI registered. Trading involves substantial economic risk. Always consult a certified financial advisor and cross-verify thresholds with your live broker terminals before any assessment."
+    )
 
     st.markdown("---")
     if st.sidebar.button("Log Out"):
         st.session_state["authenticated"] = False
         st.session_state["final_search_query"] = None
-        st.rerun()
