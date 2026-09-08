@@ -7,9 +7,9 @@ import yfinance as yf
 # 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારા આંકડા મેં પર્ફેક્ટ સેટ કરી દીધા છે)
+# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ (તમારો આઈડી અને ટોકન મેં પર્ફેક્ટ લોક કરી દીધા છે)
 TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
-TELEGRAM_CHAT_ID = "381187243"  # તમારો સાચો ચેટ આઈડી નંબર
+TELEGRAM_CHAT_ID = "-1002360565860"
 
 # ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ ફંક્શન
 def send_telegram_alert(message_text):
@@ -56,7 +56,6 @@ all_market_indices = {
     "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
 }
 
-# 💡 લિસ્ટ પાછું સેટ કર્યું જેથી સર્ચ કરતા સમયે સજેશન (Suggestions) પર્ફેક્ટ દેખાય
 suggestions_pool = [
     "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
     "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -67,7 +66,7 @@ suggestions_pool = [
     "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
     "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
     "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
     "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
     "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
     "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
@@ -79,7 +78,7 @@ def analyze_index_daily(ticker_name, display_name):
         if df.empty or len(df) < 2: return None
         if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
         target_df = df.iloc[-2]
-        h, l, c = float(target_df["High"].iloc[0] if isinstance(target_df["High"], pd.Series) else target_df["High"]), float(target_df["Low"].iloc[0] if isinstance(target_df["Low"], pd.Series) else target_df["Low"]), float(target_df["Close"].iloc[0] if isinstance(target_df["Close"], pd.Series) else target_df["Close"])
+        h, l, c = float(target_df["High"]), float(target_df["Low"]), float(target_df["Close"])
         current_price = float(df["Close"].iloc[-1])
         span = h - l
         levels = {
@@ -119,7 +118,7 @@ def analyze_stock_yearly(ticker_name):
             "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -149,7 +148,6 @@ else:
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # 🛠️ ડાયરેક્ટ ચેક કરવા માટે બટન પાછું એક્ટિવેટ કર્યું
     st.sidebar.subheader("🤖 Connection Diagnostics")
     if st.sidebar.button("⚡ Test Telegram Alert"):
         success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now successfully linked to this Telegram Bot Channel!")
@@ -166,7 +164,6 @@ else:
     st.markdown("---")
     st.subheader("🔍 Asset Search Menu (With Suggestions)")
 
-    # 🛠️ ઓટો-સજેશન પાછું લાવવા માટે સ્માર્ટ બોક્સ સેટ કર્યું
     def handle_selectbox_change():
         selected = st.session_state.stock_selectbox_key
         if selected != "SELECT STOCK":
@@ -175,3 +172,14 @@ else:
     st.selectbox(
         "સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો (સજેશન જોવા માટે અક્ષર ટાઈપ કરો):",
         suggestions_pool,
+        key="stock_selectbox_key",
+        index=0,
+        on_change=handle_selectbox_change
+    )
+
+    search_query_active = st.session_state["final_search_query"]
+
+    if search_query_active:
+        search_query = search_query_active.strip().upper()
+        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
+
