@@ -56,7 +56,7 @@ if check_password():
         "NIFTY METAL": "^CNXMETAL"
     }
 
-    # 📥 ઓટો-સજેશન માટે ઇન-બિલ્ટ ૨૦૦+ સ્ટોક્સનું આખું લિસ્ટ (સાદા નામો સાથે)
+    # 📥 ઓટો-સજેશન માટે ઇન-બિલ્ટ સ્ટોક્સનું લિસ્ટ
     suggestions_pool = [
         "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
         "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
@@ -73,7 +73,6 @@ if check_password():
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "PAYTM", "RVNL", "YESBANK", "DELHIVERY", "MANAPPURAM"
     ]
 
-    # ⏳ લોજિક ૧: ઇન્ડૅક્સ માટે પ્યોર DAILY બેઝ એનાલિસિસ ફંક્શન
     def analyze_index_daily(ticker_name, display_name):
         try:
             df = yf.download(ticker_name, period="5d", auto_adjust=True, progress=False)
@@ -85,7 +84,6 @@ if check_password():
             current_price = float(df["Close"].iloc[-1])
             span = h - l
             
-            # 🔒 ફિબોનાચી આંકડા વગરનું પ્યોર સિક્રેટ લોજિક
             levels = {
                 "Stratosphere Zone": l + (span * 4.236),
                 "Horizon Axis": l + (span * 1.618),
@@ -107,7 +105,6 @@ if check_password():
             }
         except: return None
 
-    # 📈 લોજિક ૨: સ્ટોક્સ માટે પ્યોર YEARLY બેઝ એનાલિસિસ ફંક્શન (સંપૂર્ણ ડેટા માટે)
     def analyze_stock_yearly(ticker_name):
         try:
             df = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
@@ -118,7 +115,6 @@ if check_password():
             current_price = float(df["Close"].iloc[-1])
             span = year_high - year_low
             
-            # 🔒 ૧૦０% સુરક્ષિત: ક્યાંય કોઈ ફિબોનાચી આંકડો કે હિન્ટ બતાવવામાં આવી નથી
             levels = {
                 "Stratosphere Matrix Max": year_low + (span * 4.236),
                 "Stratosphere Boundary": year_low + (span * 3.414),
@@ -149,13 +145,13 @@ if check_password():
             }
         except: return None
 
-    # --- મેઈન ડેશબોર્ડ લેઆઉટ ---
+    # --- યુઆઈ લેઆઉટ ---
     st.title("🦅 Proprietary Structural Matrix Scanner (PRO)")
     st.markdown("---")
 
-    # 📊 વિભાગ ૧: માસ્ટર ટ્રેક લિસ્ટ (ભારતના તમામ મુખ્ય ઇન્ડાઇસિસ ડેઇલી Nearby બેઝ)
+    # 📊 વિભાગ ૧: તમામ ઇન્ડાઇસિસનો માસ્ટર ટ્રેક લિસ્ટ
     st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને લાઈવ રેટની **સૌથી નજીકનું લેવલ** બતાવે છે.")
+    st.write("ભારતના તમામ મુખ્ય ઇન્ડાઇસિસનો ડેટા પ્યોર **Daily બેઝ** પરથી ગણવામાં આવ્યો છે અને લાઈવ રેટની **幕સૌથી નજીકનું લેવલ** બતાવે છે.")
     
     with st.spinner("તમામ ઇન્ડાઇસિસ મેટ્રિક્સ લોડ થઈ રહ્યો છે..."):
         index_results = []
@@ -170,11 +166,10 @@ if check_password():
 
     st.markdown("---")
 
-    # 🔍 વિભાગ ૨: ઓટો-સજેશન સર્ચ મેનુ (જ્યારે ટાઈપ કરશે ત્યારે જ ડેટા આવશે)
+    # 🔍 વિભાગ ૨: ઓટો-સજેશન સર્ચ મેનુ (ફ્લેટ ક્લીન લેઆઉટ - કોઈ એરર નહીં)
     st.subheader("🔍 Asset Search Menu (With Auto-Suggestions)")
     st.write("નીચે બોક્સ પર ક્લિક કરીને નામ ટાઈપ કરો, આખા લિસ્ટમાંથી **ઓટો-સજેશન** આવી જશે. સિલેક્ટ કરતા જ તેનો **Yearly હોલ ડેટા** દેખાશે.")
     
-    # 💡 સ્માર્ટ સજેશન ડ્રોપડાઉન બોક્સ
     user_choice = st.selectbox(
         "સ્ટોક અથવા ઇન્ડેક્સનું નામ ટાઈપ અથવા સિલેક્ટ કરો (Search with Suggestion):",
         suggestions_pool,
@@ -183,8 +178,6 @@ if check_password():
 
     if user_choice and user_choice != "SELECT STOCK":
         search_query = user_choice.strip().upper()
-        
-        # સ્માર્ટ ટીકર રિઝોલ્વિંગ લોજિક
         if search_query in all_market_indices: resolved_ticker = all_market_indices[search_query]
         else: resolved_ticker = search_query + ".NS"
 
@@ -193,14 +186,23 @@ if check_password():
 
             if stock_res:
                 st.success(f"✅ '{search_query}' નો સંપૂર્ણ ડેટા મેટ્રિક્સ સફળતાપૂર્વક લોડ થઈ ગયો છે!")
-                col_a, col_b = st.columns(2)
                 
-                with col_a:
-                    st.markdown(f"### 📊 Historical Yearly Candle Stats")
-                    st.info(f"**Live Market Spot:** ₹{stock_res['Current Price']}")
-                    st.write(f"**Year Open Close:** ₹{stock_res['Open']} / ₹{stock_res['Close']}")
-                    st.write(f"**Year High Bound:** ₹{stock_res['High']}")
-                    st.write(f"**Year Low Bound:** ₹{stock_res['Low']}")
-                    st.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
+                # 🛠️ ફિક્સ: બધી જ કોલમો લાઇન-બાય-લાઇન ફ્લેટ ગોઠવી દીધી જેથી ઇન્ડેન્ટેશન એરર જતી રહે
+                st.markdown(f"### 📊 Historical Yearly Candle Stats")
+                st.info(f"**Live Market Spot:** ₹{stock_res['Current Price']}")
+                st.write(f"**Year Open Close:** ₹{stock_res['Open']} / ₹{stock_res['Close']}")
+                st.write(f"**Year High Bound:** ₹{stock_res['High']}")
+                st.write(f"**Year Low Bound:** ₹{stock_res['Low']}")
+                st.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
                 
-                with col_b:
+                st.markdown("---")
+                st.markdown(f"### 🦅 Complete Symmetrical Matrix (1-Year Levels)")
+                for lvl_name, lvl_val in stock_res["Calculated Levels"].items():
+                    st.write(f"**{lvl_name}:** ₹{lvl_val:.2f}")
+            else:
+                st.error("❌ આ સ્ટોક માટે કોઈ ડેટા મળ્યો નથી.")
+    else:
+        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક કે ઇન્ડેક્સ પસંદ કરો, અત્યારે નીચે કોઈ ડેટા લોડ કરેલો નથી.")
+
+    st.markdown("---")
+    if st.sidebar.button("Log Out"):
