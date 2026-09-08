@@ -53,7 +53,7 @@ suggestions_pool = [
     "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
     "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
     "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS",
+    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
     "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
     "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
     "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
@@ -87,12 +87,24 @@ def analyze_index_daily(ticker_name, display_name):
 
 def analyze_stock_yearly(ticker_name):
     try:
-        df = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
-        if df.empty or len(df) < 20: return None
-        if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
-        year_high, year_low = float(df["High"].max()), float(df["Low"].min())
-        current_price = float(df["Close"].iloc[-1])
+        # પ્યોર ૧ વર્ષનો હિસ્ટોરિકલ ડેટા (લેવલ્સ માટે)
+        df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
+        if df_hist.empty or len(df_hist) < 20: return None
+        if isinstance(df_hist.columns, pd.MultiIndex): df_hist.columns = df_hist.columns.get_level_values(0)
+        
+        year_high, year_low = float(df_hist["High"].max()), float(df_hist["Low"].min())
         span = year_high - year_low
+        
+        # 🛠️ નવો લાઈવ ટુડે ડેટા (Today's Live Candle Stats)
+        df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
+        if isinstance(df_today.columns, pd.MultiIndex): df_today.columns = df_today.columns.get_level_values(0)
+        
+        current_price = float(df_today["Close"].iloc[-1])
+        today_open = float(df_today["Open"].iloc[-1])
+        today_high = float(df_today["High"].iloc[-1])
+        today_low = float(df_today["Low"].iloc[-1])
+        prev_close = float(df_today["Close"].iloc[-2])
+        today_volume = int(df_today["Volume"].iloc[-1])
         
         raw_levels = {
             "Sky Target 3": year_low + (span * 2.0),
@@ -107,7 +119,8 @@ def analyze_stock_yearly(ticker_name):
             "Floor Support 5": year_low - (span * 2.0)
         }
         
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+        # પ્રોક્સિમિટી ફિલ્ટર લોજિક (3 Up / 2 Down)
+        sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
         split_idx = 0
         for i, (name, val) in enumerate(sorted_levels):
             if current_price >= val: split_idx = i + 1
@@ -116,18 +129,13 @@ def analyze_stock_yearly(ticker_name):
         end_idx = min(len(sorted_levels), split_idx + 3)
         filtered_levels = dict(sorted_levels[start_idx:end_idx])
         
-        prev_close = float(df["Close"].iloc[-2])
-        prev_open = float(df["Open"].iloc[-2])
-        prev_high = float(df["High"].iloc[-2])
-        prev_low = float(df["Low"].iloc[-2])
-        prev_volume = int(df["Volume"].iloc[-2])
         return {
-            "Open": round(prev_open, 2), "High": round(prev_high, 2), "Low": round(prev_low, 2), "Close": round(prev_close, 2),
-            "Volume": prev_volume, "Current Price": round(current_price, 2), "Calculated Levels": filtered_levels
+            "Today Open": round(today_open, 2), "Today High": round(today_high, 2), 
+            "Today Low": round(today_low, 2), "Prev Close": round(prev_close, 2),
+            "Volume": today_volume, "Current Price": round(current_price, 2), "Calculated Levels": filtered_levels
         }
     except: return None
 
-# --- મેઈન ડેશબોર્ડ એપ્લિકેશન ફંક્શન ---
 def run_dashboard():
     st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
@@ -159,43 +167,27 @@ def run_dashboard():
         search_query = st.session_state["active_searched"].strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        with st.spinner(f"'{resolved_ticker}' નો વાર્ષિક ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        with st.spinner(f"'{resolved_ticker}' નો લાઈવ માર્કેટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
             stock_res = analyze_stock_yearly(resolved_ticker)
             if stock_res:
                 st.markdown(f"## 🎉 {search_query} Matrix Summary")
-                col1, col2, col3 = st.columns(3)
+                
+                # 🛠️ સુધારેલું યુઆઈ: આજનો લાઈવ ડેટા ડિસ્પ્લે કાર્ડ્સ
+                col1, col2, col3, col4 = st.columns(4)
                 col1.metric("Live Market Spot", f"₹ {stock_res['Current Price']:,.2f}")
-                col2.write(f"**Year Open / Close:** ₹ {stock_res['Open']} / ₹ {stock_res['Close']}")
-                col3.write(f"**Accumulated Volume:** {stock_res['Volume']:,}")
+                col2.write(f"📊 **Today's Open:** ₹ {stock_res['Today Open']}")
+                col3.write(f"🟢 **Today's High:** ₹ {stock_res['Today High']}")
+                col4.write(f"🔴 **Today's Low:** ₹ {stock_res['Today Low']}")
+                
+                st.write(f"🗒️ **Previous Day Close:** ₹ {stock_res['Prev Close']} | **Today's Volume:** {stock_res['Volume']:,}")
                 
                 st.markdown("---")
                 st.markdown(f"### 🦅 Symmetrical Price Matrix")
-                levels_data = [{"Easy Structural Level": name, "Calculated Price": f"₹ {val:,.2f}"} for name, val in stock_res["Calculated Levels"].items()]
-                st.dataframe(pd.DataFrame(levels_data), use_container_width=True)
-            else:
-                st.error("❌ ડેટા મળ્યો નથી.")
-    else:
-        st.info("💡 ઉપર સર્ચ મેનુમાંથી કોઈ એક સ્ટોક પસંદ કરો.")
-
-    st.markdown("---")
-    if st.sidebar.button("Log Out"):
-        st.session_state["authenticated"] = False
-        st.session_state["active_searched"] = None
-        st.rerun()
-
-# --- મેઈન એન્ટ્રી પોઈન્ટ અને પાસવર્ડ ચેક ---
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
-    st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
-    user_password = st.text_input("Enter Private Access Password:", type="password")
-    if st.button("Access Dashboard"):
-        if user_password == CORRECT_PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("❌ ખોટો પાસવર્ડ!")
-else:
-    run_dashboard()
+                
+                # 🛠️ નવો સુધારો: દરેક લેવલ લાઈવ પ્રાઈઝથી કેટલું દૂર છે તે ટકા (%) ગણવા
+                levels_list = []
+                current_spot = stock_res['Current Price']
+                
+                for name, val in stock_res["Calculated Levels"].items():
+                    # ટકાવારી અંતર ગણતરી
+                    distance_pct = ((val - current_spot) / current_spot) * 100
