@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 import yfinance as yf
 
@@ -90,7 +91,7 @@ else:
 
     def extract_scalar(series_or_val):
         if isinstance(series_or_val, (pd.Series, np.ndarray)):
-            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
+            return float(series_or_val.iloc) if len(series_or_val) > 0 else 0.0
         return float(series_or_val)
 
     def analyze_full_matrix(ticker_name):
@@ -124,7 +125,7 @@ else:
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -140,7 +141,7 @@ else:
             }
         except: return None
 
-    st.markdown("<h3 style='text-align: center; color: #00ffaa;'>← [ SEARCH ] →</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #00ffaa;'>... [ SEARCH ] ...</h3>", unsafe_allow_html=True)
     user_choice = st.selectbox("", suggestions_pool, index=0, label_visibility="collapsed")
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -154,7 +155,6 @@ else:
             if res:
                 st.markdown("### - . RESULT . -")
                 
-                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC & Volume) - ૧૦０% સુરક્ષિત અને સ્ટેબલ
                 hloc_data = {
                     "SCRIP": [search_query],
                     "TODAYS H": [f"₹ {res['High']:,.2f}"],
@@ -167,10 +167,12 @@ else:
                 st.dataframe(pd.DataFrame(hloc_data), use_container_width=True, hide_index=True)
                 
                 st.markdown("---")
-                
-                # 🛠️ ૨. નવું એડવાન્સ મલ્ટી-કૉલમ ગ્રીડ લેઆઉટ (તમારા સ્કેચની હૂબહૂ ડિઝાઇન કોઈ પણ પાંડાઝ એરર વગર!)
                 st.markdown("### 📊 QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS")
                 
-                col_left, col_right = st.columns([2, 1])
+                # 🎯 🛠️ એરર ફિક્સ: st.columns(2) માં કૌંસની અંદર આંકડો ૨ સેટ કરી દીધો છે
+                col_left, col_right = st.columns(2)
                 
-                # ડાબી બાજુનું ખાનું: ૩ ઉપર અને ૨ નીચે વાળા કસ્ટમ ફિબોનાચી લેવલ્સ
+                with col_left:
+                    levels_list = []
+                    current_spot = res['Current Price']
+                    for name, val in res["Calculated Levels"].items():
