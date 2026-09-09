@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import yfinance as yf
 
@@ -84,41 +83,43 @@ else:
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
     ]
 
-    def clean_columns(df):
-        if df is not None and not df.empty:
-            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
-            df.columns = [str(c).strip() for c in df.columns]
-        return df
-
-    def extract_scalar(series_or_val):
-        if isinstance(series_or_val, (pd.Series, np.ndarray)):
-            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
-        return float(series_or_val)
+    def extract_clean_series(df, column_name):
+        try:
+            if isinstance(df.columns, pd.MultiIndex):
+                s = df[column_name].iloc[:, 0]
+            else:
+                s = df[column_name]
+            return s.dropna()
+        except:
+            return pd.Series(dtype=float)
 
     def analyze_full_matrix(ticker_name):
         try:
+            # 📊 ૧ વર્ષનો વાર્ષિક ડેટા ( Strict Grouping & Clean Downloader)
             df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
             if df_hist.empty: return None
-            df_hist = clean_columns(df_hist)
             
-            ma_50 = float(df_hist["Close"].rolling(50).mean().dropna().iloc[-1])
-            ma_100 = float(df_hist["Close"].rolling(100).mean().dropna().iloc[-1])
-            ma_200 = float(df_hist["Close"].rolling(200).mean().dropna().iloc[-1])
+            close_s = extract_clean_series(df_hist, "Close")
+            high_s = extract_clean_series(df_hist, "High")
+            low_s = extract_clean_series(df_hist, "Low")
+            vol_s = extract_clean_series(df_hist, "Volume")
             
-            year_high = float(df_hist["High"].max())
-            year_low = float(df_hist["Low"].min())
+            if close_s.empty or len(close_s) < 20: return None
+            
+            # મુવિંગ એવરેજ ગણતરી (MA 50, 100, 200)
+            ma_50 = float(close_s.rolling(50).mean().iloc[-1])
+            ma_100 = float(close_s.rolling(100).mean().iloc[-1])
+            ma_200 = float(close_s.rolling(200).mean().iloc[-1])
+            
+            year_high = float(high_s.max())
+            year_low = float(low_s.min())
             span = year_high - year_low
             
-            df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
-            if df_today.empty: return None
-            df_today = clean_columns(df_today)
-            
-            t_row = df_today.iloc[-1]
-            current_price = extract_scalar(t_row["Close"])
-            today_open = extract_scalar(t_row["Open"])
-            today_high = extract_scalar(t_row["High"])
-            today_low = extract_scalar(t_row["Low"])
-            avg_vol = int(df_hist["Volume"].mean())
+            current_price = float(close_s.iloc[-1])
+            today_open = float(extract_clean_series(df_hist, "Open").iloc[-1])
+            today_high = float(high_s.iloc[-1])
+            today_low = float(low_s.iloc[-1])
+            avg_vol = int(vol_s.mean())
             
             raw_levels = {
                 "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
@@ -174,3 +175,5 @@ else:
                 
                 with col_left:
                     st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
+                    st.markdown("<h4 style='color:#00ffaa; text-align:left;'>🦅 Symmetrical Price Matrix</h4><br>", unsafe_allow_html=True)
+                    
