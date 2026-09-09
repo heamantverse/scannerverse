@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 import yfinance as yf
 
@@ -83,30 +84,32 @@ else:
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
     ]
 
-    def extract_clean_series(df, column_name):
+    # 🛠️ અલ્ટીમેટ કૉલમ સાફ કરવાનું એન્જિન (મલ્ટી-ઇન્ડેક્સ કચરો ૧૦૦% સાફ કરવા માટે)
+    def get_clean_series(df, col_name):
         try:
             if isinstance(df.columns, pd.MultiIndex):
-                s = df[column_name].iloc[:, 0]
+                # જો ડેટા [['Close', 'NIFTY METAL']] જેવા ફોર્મેટમાં હોય તો તેને સિંગલ લાઈનમાં લાવવું
+                return df[col_name].iloc[:, 0].dropna()
             else:
-                s = df[column_name]
-            return s.dropna()
+                return df[col_name].dropna()
         except:
             return pd.Series(dtype=float)
 
     def analyze_full_matrix(ticker_name):
         try:
-            # 📊 ૧ વર્ષનો વાર્ષિક ડેટા ( Strict Grouping & Clean Downloader)
+            # 📊 ૧ વર્ષનો ડેટા ડાઉનલોડ
             df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
             if df_hist.empty: return None
             
-            close_s = extract_clean_series(df_hist, "Close")
-            high_s = extract_clean_series(df_hist, "High")
-            low_s = extract_clean_series(df_hist, "Low")
-            vol_s = extract_clean_series(df_hist, "Volume")
+            close_s = get_clean_series(df_hist, "Close")
+            high_s = get_clean_series(df_hist, "High")
+            low_s = get_clean_series(df_hist, "Low")
+            vol_s = get_clean_series(df_hist, "Volume")
+            open_s = get_clean_series(df_hist, "Open")
             
             if close_s.empty or len(close_s) < 20: return None
             
-            # મુવિંગ એવરેજ ગણતરી (MA 50, 100, 200)
+            # મુવિંગ એવરેજ પ્યોર કેલ્ક્યુલેશન
             ma_50 = float(close_s.rolling(50).mean().iloc[-1])
             ma_100 = float(close_s.rolling(100).mean().iloc[-1])
             ma_200 = float(close_s.rolling(200).mean().iloc[-1])
@@ -116,7 +119,7 @@ else:
             span = year_high - year_low
             
             current_price = float(close_s.iloc[-1])
-            today_open = float(extract_clean_series(df_hist, "Open").iloc[-1])
+            today_open = float(open_s.iloc[-1])
             today_high = float(high_s.iloc[-1])
             today_low = float(low_s.iloc[-1])
             avg_vol = int(vol_s.mean())
@@ -127,7 +130,7 @@ else:
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -175,5 +178,3 @@ else:
                 
                 with col_left:
                     st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
-                    st.markdown("<h4 style='color:#00ffaa; text-align:left;'>🦅 Symmetrical Price Matrix</h4><br>", unsafe_allow_html=True)
-                    
