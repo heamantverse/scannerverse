@@ -1,45 +1,29 @@
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import yfinance as yf
 
-# 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ
+# 🔒 તમારો પાવરફુલ સિક્રેટ પાસવર્ડ અને આઈડી
+CORRECT_USER_ID = "SupaTrade"
 CORRECT_PASSWORD = "PowerFULLtrade"
 
-# 🤖 🛠️ ટેલિગ્રામ કનેક્શન સેટઅપ
-TELEGRAM_TOKEN = "8879164929:AAHo9RfH2hBpSW062hP0J1aMbx9xMdAJ90g"
-TELEGRAM_CHAT_ID = "381187243"
-
-# ટેલિગ્રામ પર ઓટોમેટિક ફ્રી મેસેજ મોકલવાનું સ્માર્ટ સેફ ફંક્શન
-def send_telegram_alert(message_text):
-    if not TELEGRAM_TOKEN or TELEGRAM_TOKEN == "":
-        return False
-    try:
-        url = f"https://telegram.org{TELEGRAM_TOKEN}/sendMessage"
-        payload = {"chat_id": int(TELEGRAM_CHAT_ID.strip()), "text": message_text, "parse_mode": "Markdown"}
-        res = requests.post(url, json=payload, timeout=3)
-        return res.status_code == 200
-    except:
-        return False
-
 st.set_page_config(
-    page_title="Proprietary Matrix Scanner",
+    page_title="SUPA TRADE R - Matrix Scanner",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS ડાર્ક થીમ
+# કસ્ટમ CSS થીમ - સ્કેચ મુજબ પ્રીમિયમ લુક આપવા માટે
 st.markdown(
     """
     <style>
     .stApp { background-color: #0b0e14; color: #ecf0f1; font-family: 'Inter', sans-serif; }
-    h1, h2, h3 { color: #00ffaa !important; font-weight: 700; }
-    .stButton>button { background: linear-gradient(135deg, #00ffaa 0%, #00bcff 100%); color: #0b0e14 !important; font-weight: bold; border: none; padding: 10px 24px; border-radius: 6px; transition: all 0.3s ease; }
+    h1, h2, h3 { color: #00ffaa !important; font-weight: 700; text-align: center; }
+    .stButton>button { background: linear-gradient(135deg, #00ffaa 0%, #00bcff 100%); color: #0b0e14 !important; font-weight: bold; border: none; padding: 12px 28px; border-radius: 6px; width: 100%; transition: all 0.3s ease; }
     .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,170,0.4); }
     .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
-    div[data-testid="stMetricValue"] { color: #00ffaa !important; font-size: 32px; font-weight: bold; }
+    .ad-box { background-color: #121620; padding: 15px; border-radius: 8px; border: 1px solid #1f2430; margin-bottom: 20px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -48,146 +32,145 @@ st.markdown(
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
-all_market_indices = {
-    "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
-    "NIFTY MIDCAP 50": "^CRSMID", "NIFTY SMALLCAP 50": "^CNXSMALL", "NIFTY IT": "^CNXIT",
-    "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
-}
-
-suggestions_pool = [
-    "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
-    "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
-    "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
-    "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
-    "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
-    "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
-    "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
-    "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
-    "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
-    "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
-    "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
-    "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
-]
-
-# 🛠️ એડવાન્સ ડેટા ક્લીનર: મલ્ટી-ઇન્ડેક્સ કૉલમ્સને સંપૂર્ણ સાફ કરવા માટે
-def clean_columns(df):
-    if df is not None and not df.empty:
-        try:
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-            df.columns = [str(c).strip() for c in df.columns]
-        except:
-            pass
-    return df
-
-def extract_scalar(series_or_val):
-    if isinstance(series_or_val, (pd.Series, np.ndarray)):
-        if len(series_or_val) > 0:
-            return float(series_or_val[0])
-        return 0.0
-    return float(series_or_val)
-
-def analyze_index_daily(ticker_name, display_name):
-    try:
-        df = yf.download(ticker_name, period="5d", auto_adjust=True, progress=False)
-        if df.empty or len(df) < 2: return None
-        df = clean_columns(df)
-        
-        target_df = df.iloc[-2]
-        h = extract_scalar(target_df["High"])
-        l = extract_scalar(target_df["Low"])
-        
-        last_row = df.iloc[-1]
-        current_price = extract_scalar(last_row["Close"])
-        span = h - l
-        
-        levels = {
-            "Sky Target 3": l + (span * 2.0), "Sky Target 2": l + (span * 1.618), "Center Balance Zone": l + (span * 0.618),
-            "Floor Support 1": l + (span * 0.272), "Floor Support 2": l + (span * 0.236), "Base Zero": l, "Floor Support 3": l - (span * 0.618)
-        }
-        closest_node = "In-Between Zones"
-        min_diff = float("inf")
-        for name, val in levels.items():
-            diff = abs(current_price - val)
-            if diff < min_diff: min_diff = diff; closest_node = name
-        return {"Index Tracker": display_name, "Current Spot": f"₹ {current_price:,.2f}", "Nearby Node Level": f"⚡ {closest_node}"}
-    except: return None
-
-def analyze_stock_yearly(ticker_name):
-    try:
-        df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
-        if df_hist.empty or len(df_hist) < 20: return None
-        df_hist = clean_columns(df_hist)
-        
-        # 🛠️ મલ્ટી-ઇન્ડેક્સ સિરીઝમાંથી સચોટ મેક્સિમમ અને મિનિમમ વેલ્યુ કાઢવી
-        year_high = float(df_hist["High"].max() if not isinstance(df_hist["High"].max(), pd.Series) else df_hist["High"].max().iloc[0])
-        year_low = float(df_hist["Low"].min() if not isinstance(df_hist["Low"].min(), pd.Series) else df_hist["Low"].min().iloc[0])
-        span = year_high - year_low
-        
-        df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
-        if df_today.empty or len(df_today) < 2: return None
-        df_today = clean_columns(df_today)
-        
-        t_row, p_row = df_today.iloc[-1], df_today.iloc[-2]
-        current_price = extract_scalar(t_row["Close"])
-        today_open = extract_scalar(t_row["Open"])
-        today_high = extract_scalar(t_row["High"])
-        today_low = extract_scalar(t_row["Low"])
-        prev_close = extract_scalar(p_row["Close"])
-        today_volume = int(extract_scalar(t_row["Volume"]))
-        
-        raw_levels = {
-            "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
-            "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
-            "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
-        }
-        
-        sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
-        split_idx = 0
-        for i, (name, val) in enumerate(sorted_levels):
-            if current_price >= val: split_idx = i + 1
-                
-        start_idx = max(0, split_idx - 2)
-        end_idx = min(len(sorted_levels), split_idx + 3)
-        filtered_levels = dict(sorted_levels[start_idx:end_idx])
-        
-        return {
-            "Today Open": round(today_open, 2), "Today High": round(today_high, 2), "Today Low": round(today_low, 2),
-            "Prev Close": round(prev_close, 2), "Volume": today_volume, "Current Price": round(current_price, 2), "Calculated Levels": filtered_levels
-        }
-    except: return None
-
-# --- મુખ્ય ગેઇટવે કંટ્રોલ ફ્લો ---
+# --- ૧. લૉગિન પેજ (તમારા બીજા ફોટાની હૂબહૂ ડિઝાઇન મુજબ) ---
 if not st.session_state["authenticated"]:
-    st.markdown("<h1>🔒 Security Access Required</h1>", unsafe_allow_html=True)
-    st.write("આ એક પ્રાઇવેટ પ્રોપ્રાઇટરી મેટ્રિક્સ સ્કેનર છે.")
-    user_password = st.text_input("Enter Private Access Password:", type="password")
-    if st.button("Access Dashboard"):
-        if user_password == CORRECT_PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else: st.error("❌ ખોટો પાસવર્ડ!")
+    st.markdown("<h1 style='font-size: 42px; font-style: italic; letter-spacing: 2px;'>⚡ SUPA TRADE R ⚡</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #8892b0;'>Private Quantitative Trading Software</p>", unsafe_allow_html=True)
+    st.markdown("---")
+    
+    # લૉગિન બોક્સ સેન્ટર કરવા માટે લેઆઉટ
+    _, col_mid, _ = st.columns([1, 1.5, 1])
+    with col_mid:
+        st.markdown("<h3 style='text-align: left; color: #ffffff !important;'>LOGIN DETAILS</h3>", unsafe_allow_html=True)
+        user_id = st.text_input("Enter Private User ID:", placeholder="e.g., SupaTrade")
+        user_password = st.text_input("Enter Private Access Password:", type="password", placeholder="••••••••")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("Access Dashboard"):
+            if user_id == CORRECT_USER_ID and user_password == CORRECT_PASSWORD:
+                st.session_state["authenticated"] = True
+                st.rerun()
+            else:
+                st.error("❌ ખોટો યુઝર આઈડી અથવા પાસવર્ડ! એક્સેસ નકારવામાં આવ્યો છે.")
+                
+    st.markdown("<br><br><hr>", unsafe_allow_html=True)
+    st.markdown("<h4 style='color: #ff4b4b !important; text-align: center;'>Disclaimer</h4>", unsafe_allow_html=True)
+    st.caption("<p style='text-align: center;'>This is a private proprietary system. Unauthorized access attempts are strictly monitored and logged.</p>", unsafe_allow_html=True)
+
 else:
-    st.markdown("<h1 style='text-align: center;'>🦅 Proprietary Structural Matrix Scanner</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #8892b0;'>Premium Quant Infrastructure Tool</p>", unsafe_allow_html=True)
+    # --- ૨. મુખ્ય ડેશબોર્ડ (તમારા પહેલા ફોટાની હૂબહૂ ડિઝાઇન મુજબ) ---
+    st.markdown("<h1>🦅 CREATE THE BEST OPPORTUNITY </h1>", unsafe_allow_html=True)
     st.markdown("---")
 
-    st.sidebar.subheader("🤖 Connection Diagnostics")
-    if st.sidebar.button("⚡ Test Telegram Alert"):
-        success = send_telegram_alert("🚀 *SUCCESS:* Your Scanner is now linked successfully!")
-        if success: st.sidebar.success("✅ મેસેજ મોકલાઈ ગયો!")
-        else: st.sidebar.error("❌ બોટ ચેક કરો.")
+    # સ્ટોક્સ અને ઇન્ડાઇસિસનું માસ્ટર પૂલ લિસ્ટ
+    all_market_indices = {
+        "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
+        "NIFTY MIDCAP 50": "^CRSMID", "NIFTY SMALLCAP 50": "^CNXSMALL", "NIFTY IT": "^CNXIT",
+        "NIFTY AUTO": "^CNXAUTO", "NIFTY PHARMA": "^CNXPHARMA", "NIFTY FMCG": "^CNXFMCG", "NIFTY METAL": "^CNXMETAL"
+    }
 
-    st.subheader("🏛️ All Indices Master Track List (Daily Base Nearby Matrix)")
-    raw_results = [analyze_index_daily(ticker, name) for name, ticker in all_market_indices.items()]
-    index_results = [res for res in raw_results if res is not None]
-    if len(index_results) > 0: st.dataframe(pd.DataFrame(index_results), use_container_width=True)
-    else: st.warning("ઇન્ડૅક્સ ડેટા લોડ થઈ શક્યો નથી.")
+    suggestions_pool = [
+        "SELECT STOCK", "NIFTY 50", "NIFTY BANK", "NIFTY FINANCIAL SERVICES", "NIFTY IT", "NIFTY AUTO", "NIFTY PHARMA", "NIFTY FMCG", "NIFTY METAL",
+        "RELIANCE", "TCS", "INFY", "SBIN", "HDFCBANK", "ICICIBANK", "TATAMOTORS", "BHARTIARTL", "ITC", "HINDUNILVR",
+        "LT", "BAJFINANCE", "MARUTI", "HCLTECH", "AXISBANK", "SUNPHARMA", "M&M", "TATASTEEL", "ADANIENT", "NTPC",
+        "POWERGRID", "TITAN", "ULTRACEMCO", "COALINDIA", "BAJAJFINSV", "ONGC", "ADANIPORTS", "HINDALCO", "JSWSTEEL", "WIPRO",
+        "NESTLEIND", "DRREDDY", "APOLLOHOSP", "SBILIFE", "BRITANNIA", "SHRIRAMFIN", "BAJAJ-AUTO", "BEL", "EICHERMOT", "HEROMOTOCO",
+        "CIPLA", "DIVISLAB", "INDUSINDBK", "KOTAKBANK", "PNB", "BANKBARODA", "FEDERALBNK", "IDFCFIRSTB", "BANDHANBNK", "HAL",
+        "ZOMATO", "TRENT", "VBL", "DLF", "IRFC", "RECLTD", "PFC", "IOC", "GAIL", "TATAPOWER", "CANBK", "CHOLAFIN",
+        "JINDALSTEL", "AMBUJACEM", "HAVELLS", "PIDILITIND", "ADANIPOWER", "BHEL", "AUROPHARMA", "BANKINDIA", "BOSCHLTD", "DABUR",
+        "DEEPAKNTR", "EXIDEIND", "GLENMARK", "GODREJPROP", "GRANULES", "GUJGASLTD", "INDIGO", "IRCTC", "JSWENERGY", "JUBLFOOD",
+        "MCX", "METROPOLIS", "MFSL", "MGL", "MUTHOOTFIN", "NATIONALUM", "NAVINFLUOR", "NMDC", "NYKAA", "OBEROIRLTY", "OFSS",
+        "OIL", "PAYTM", "PEL", "PERSISTENT", "PETRONET", "POLYCAB", "PVRINOX", "RAMCOCEM", "RVNL", "SAIL", "SOBHA", "SONACOMS", "SUNTV", "SUPREMEIND", "SUZLON", "TATACOMM",
+        "TATAELXSI", "TATACONSUM", "TECHM", "TORNTPHARM", "TORNTPOWER", "TVSMOTOR", "UBL", "UNIONBANK", "UPL", "VOLTAS", "ZEEL",
+        "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
+    ]
 
-    st.markdown("---")
-    st.subheader("🔍 Asset Search Menu")
-    user_choice = st.selectbox("સ્ટોક અથવા ઇન્ડેક્સનું નામ સિલેક્ટ કરો:", suggestions_pool, index=0)
+    def clean_columns(df):
+        if df is not None and not df.empty:
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+            df.columns = [str(c).strip() for c in df.columns]
+        return df
+
+    def extract_scalar(series_or_val):
+        if isinstance(series_or_val, (pd.Series, np.ndarray)):
+            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
+        return float(series_or_val)
+
+    def analyze_full_matrix(ticker_name):
+        try:
+            # 📊 ૧ વર્ષનો ડેટા (ફિબોનાચી લેવલ્સ અને મુવિંગ એવરેજ માટે)
+            df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
+            if df_hist.empty or len(df_hist) < 20: return None
+            df_hist = clean_columns(df_hist)
+            
+            # મુવિંગ એવરેજ ગણતરી (MA 50, 100, 200)
+            ma_50 = float(df_hist["Close"].rolling(50).mean().iloc[-1])
+            ma_100 = float(df_hist["Close"].rolling(100).mean().iloc[-1])
+            ma_200 = float(df_hist["Close"].rolling(200).mean().iloc[-1])
+            
+            year_high = float(df_hist["High"].max())
+            year_low = float(df_hist["Low"].min())
+            span = year_high - year_low
+            
+            # આજના લાઈવ OHLC ડેટા માટે
+            df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
+            if df_today.empty or len(df_today) < 2: return None
+            df_today = clean_columns(df_today)
+            
+            t_row = df_today.iloc[-1]
+            current_price = extract_scalar(t_row["Close"])
+            today_open = extract_scalar(t_row["Open"])
+            today_high = extract_scalar(t_row["High"])
+            today_low = extract_scalar(t_row["Low"])
+            avg_vol = int(df_hist["Volume"].mean())
+            
+            # તમારા કસ્ટમ સરળ નામો
+            raw_levels = {
+                "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
+                "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
+                "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
+            }
+            
+            # ૩ ઉપર અને ૨ નીચે પ્રોક્સિમિટી ફિલ્ટર લોજિક
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+            split_idx = 0
+            for i, (name, val) in enumerate(sorted_levels):
+                if current_price >= val: split_idx = i + 1
+                    
+            start_idx = max(0, split_idx - 2)
+            end_idx = min(len(sorted_levels), split_idx + 3)
+            filtered_levels = dict(sorted_levels[start_idx:end_idx])
+            
+            return {
+                "Open": round(today_open, 2), "High": round(today_high, 2), "Low": round(today_low, 2), "Close": round(current_price, 2),
+                "Avg Vol": avg_vol, "MA50": round(ma_50, 2), "MA100": round(ma_100, 2), "MA200": round(ma_200, 2),
+                "Current Price": round(current_price, 2), "Calculated Levels": filtered_levels
+            }
+        except: return None
+
+    # 🔍 સર્ચ બોક્સ સેટઅપ (સ્કેચમાં બતાવ્યા મુજબ વચ્ચે)
+    st.markdown("<h3 style='text-align: center; color: #00ffaa;'>← [ SEARCH ] →</h3>", unsafe_allow_html=True)
+    user_choice = st.selectbox("", suggestions_pool, index=0, label_visibility="collapsed")
+    st.markdown("<br>", unsafe_allow_html=True)
 
     if user_choice and user_choice != "SELECT STOCK":
-        resolved_ticker = all_market_indices[search_query] if user_choice in all_market_indices else user_choice + ".NS"
+        search_query = user_choice.strip().upper()
+        resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
+
+        with st.spinner("લાયવ માર્કેટ ક્વોન્ટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+            res = analyze_full_matrix(resolved_ticker)
+            
+            if res:
+                st.markdown("### - . RESULT . -")
+                
+                # --- સ્કેચ મુજબનું મુખ્ય કોષ્ટક (Table) ---
+                # રો ૧: TODAYS HLOC અને Avg Vol
+                hloc_data = {
+                    "SCRIP": [search_query],
+                    "TODAYS H": [f"₹ {res['High']:,}"],
+                    "TODAYS L": [f"₹ {res['Low']:,}"],
+                    "TODAYS O": [f"₹ {res['Open']:,}"],
+                    "TODAYS C": [f"₹ {res['Close']:,}"],
+                    "Avg Vol": [f"{res['Avg Vol']:,}"]
+                }
+                st.markdown("**TODAYS MARKET FEED & VOLUME**")
+                st.dataframe(pd.DataFrame(hloc_data), use_container_width=True, hide_index=True)
