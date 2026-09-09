@@ -169,10 +169,8 @@ else:
                 st.markdown("---")
                 st.markdown("### 📊 QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS")
                 
-                # 🎯 🛠️ એરર ફિક્સ: st.columns(2) માં કૌંસની અંદર આંકડો ૨ સેટ કરી દીધો છે
                 col_left, col_right = st.columns(2)
                 
                 with col_left:
-                    levels_list = []
-                    current_spot = res['Current Price']
-                    for name, val in res["Calculated Levels"].items():
+                    # 🛠️ એરર ફિક્સ: લૂપ્સ સંપૂર્ણપણે હટાવીને ગ્રીડને વન-બાય-વન સિંગલ લાઇન લોજિકમાં લોક કરી દીધી (No Indentation Error)
+                    keys = list(res["Calculated Levels"].keys())
