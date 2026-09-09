@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS થીમ - સ્કેચ મુજબ પ્રીમિયમ લુક આપવા માટે
+# કસ્ટમ CSS થીમ
 st.markdown(
     """
     <style>
@@ -138,7 +138,7 @@ else:
                 "Avg Vol": avg_vol, "MA50": ma_50, "MA100": ma_100, "MA200": ma_200,
                 "Current Price": current_price, "Calculated Levels": filtered_levels
             }
-        except Exception as e:
+        except:
             return None
 
     st.markdown("<h3 style='text-align: center; color: #00ffaa;'>← [ SEARCH ] →</h3>", unsafe_allow_html=True)
@@ -155,7 +155,6 @@ else:
             if res:
                 st.markdown("### - . RESULT . -")
                 
-                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC)
                 hloc_data = {
                     "SCRIP": [search_query],
                     "TODAYS H": [f"₹ {res['High']:,.2f}"],
@@ -169,10 +168,9 @@ else:
                 
                 st.markdown("---")
                 
-                # 🛠️ ૨. નીચેનું મુખ્ય ટેબલ (તમારા સ્કેચની પર્ફેક્ટ રો અને કોલમ ડિઝાઇન મુજબ)
+                # 🛠️ ૨. ફિક્સ કરેલું નીચેનું મુખ્ય ટેબલ
                 st.markdown("📊 **QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS**")
                 
-                # ફિલ્ટર કરેલા સિક્રેટ ૫ લેવલ્સની યાદી બનાવવી
                 levels_names = []
                 levels_prices = []
                 current_spot = res['Current Price']
@@ -180,3 +178,7 @@ else:
                 for name, val in res["Calculated Levels"].items():
                     distance_pct = ((val - current_spot) / current_spot) * 100
                     direction_sign = "+" if distance_pct >= 0 else ""
+                    levels_names.append(name)
+                    levels_prices.append(f"₹ {val:,.2f} ({direction_sign}{distance_pct:.2f} %)")
+                
+                while len(levels_names) < 5:
