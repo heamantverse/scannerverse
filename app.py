@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import yfinance as yf
 
@@ -14,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS થીમ
+# કસ્ટમ CSS થીમ - સ્કેચ મુજબ પ્રીમિયમ લુક આપવા માટે
 st.markdown(
     """
     <style>
@@ -24,6 +23,8 @@ st.markdown(
     .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,170,0.4); }
     .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
+    .matrix-box { background-color: #121620; padding: 20px; border-radius: 8px; border: 1px solid #1f2430; margin-top: 10px; }
+    .ma-box { background-color: #161b22; padding: 15px; border-radius: 6px; border: 1px solid #30363d; text-align: center; margin-bottom: 10px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -89,7 +90,7 @@ else:
 
     def extract_scalar(series_or_val):
         if isinstance(series_or_val, (pd.Series, np.ndarray)):
-            return float(series_or_val.iloc) if len(series_or_val) > 0 else 0.0
+            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
         return float(series_or_val)
 
     def analyze_full_matrix(ticker_name):
@@ -123,7 +124,7 @@ else:
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -153,6 +154,7 @@ else:
             if res:
                 st.markdown("### - . RESULT . -")
                 
+                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC & Volume) - ૧૦０% સુરક્ષિત અને સ્ટેબલ
                 hloc_data = {
                     "SCRIP": [search_query],
                     "TODAYS H": [f"₹ {res['High']:,.2f}"],
@@ -165,15 +167,10 @@ else:
                 st.dataframe(pd.DataFrame(hloc_data), use_container_width=True, hide_index=True)
                 
                 st.markdown("---")
-                st.markdown("📊 **QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS**")
                 
-                # 🛠️ અલ્ટીમેટ ડેટા કન્વર્ઝન ફિક્સ: લિસ્ટ ને કમ્પ્લીટલી ફ્લેટ વન-બાય-વન લાઈનમાં ગોઠવવું
-                keys = list(res["Calculated Levels"].keys())
-                vals = list(res["Calculated Levels"].values())
-                curr = res['Current Price']
+                # 🛠️ ૨. નવું એડવાન્સ મલ્ટી-કૉલમ ગ્રીડ લેઆઉટ (તમારા સ્કેચની હૂબહૂ ડિઝાઇન કોઈ પણ પાંડાઝ એરર વગર!)
+                st.markdown("### 📊 QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS")
                 
-                # ૫ કસ્ટમ રો (Rows) માટે સચોટ નામ અને ટકાવારી અંતર વેરિએબલ્સ
-                n0 = keys[0] if len(keys) > 0 else "-"
-                p0 = f"₹ {vals[0]:,.2f} ({'+' if (vals[0]-curr)>=0 else ''}{((vals[0]-curr)/curr*100):.2f} %)" if len(vals) > 0 else "-"
+                col_left, col_right = st.columns([2, 1])
                 
-                n1 = keys[1] if len(keys) > 1 else "-"
+                # ડાબી બાજુનું ખાનું: ૩ ઉપર અને ૨ નીચે વાળા કસ્ટમ ફિબોનાચી લેવલ્સ
