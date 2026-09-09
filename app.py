@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 import yfinance as yf
 
@@ -13,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS થીમ - ડાર્ક મોડ અને કસ્ટમ કન્ટેનર માટે
+# કસ્ટમ CSS થીમ - સ્કેચ મુજબ પ્રીમિયમ લુક આપવા માટે
 st.markdown(
     """
     <style>
@@ -83,11 +84,22 @@ else:
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
     ]
 
+    def clean_columns(df):
+        if df is not None and not df.empty:
+            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
+            df.columns = [str(c).strip() for c in df.columns]
+        return df
+
+    def extract_scalar(series_or_val):
+        if isinstance(series_or_val, (pd.Series, np.ndarray)):
+            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
+        return float(series_or_val)
+
     def analyze_full_matrix(ticker_name):
         try:
             df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
             if df_hist.empty: return None
-            if isinstance(df_hist.columns, pd.MultiIndex): df_hist.columns = df_hist.columns.get_level_values(0)
+            df_hist = clean_columns(df_hist)
             
             ma_50 = float(df_hist["Close"].rolling(50).mean().dropna().iloc[-1])
             ma_100 = float(df_hist["Close"].rolling(100).mean().dropna().iloc[-1])
@@ -99,13 +111,13 @@ else:
             
             df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
             if df_today.empty: return None
-            if isinstance(df_today.columns, pd.MultiIndex): df_today.columns = df_today.columns.get_level_values(0)
+            df_today = clean_columns(df_today)
             
             t_row = df_today.iloc[-1]
-            current_price = float(t_row["Close"].iloc[0] if isinstance(t_row["Close"], pd.Series) else t_row["Close"])
-            today_open = float(t_row["Open"].iloc[0] if isinstance(t_row["Open"], pd.Series) else t_row["Open"])
-            today_high = float(t_row["High"].iloc[0] if isinstance(t_row["High"], pd.Series) else t_row["High"])
-            today_low = float(t_row["Low"].iloc[0] if isinstance(t_row["Low"], pd.Series) else t_row["Low"])
+            current_price = extract_scalar(t_row["Close"])
+            today_open = extract_scalar(t_row["Open"])
+            today_high = extract_scalar(t_row["High"])
+            today_low = extract_scalar(t_row["Low"])
             avg_vol = int(df_hist["Volume"].mean())
             
             raw_levels = {
@@ -144,7 +156,6 @@ else:
             if res:
                 st.markdown("### - . RESULT . -")
                 
-                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC & Volume)
                 hloc_data = {
                     "SCRIP": [search_query],
                     "TODAYS H": [f"₹ {res['High']:,.2f}"],
@@ -159,7 +170,6 @@ else:
                 st.markdown("---")
                 st.markdown("### 📊 QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS")
                 
-                # 🛠️ અલ્ટીમેટ સોલ્યુશન: કોઈ પણ જટિલ ટેબલ કે લૂપ્સ વગર સાદું લાઇન-બાય-લાઇન કોલમ લેઆઉટ
                 col_left, col_right = st.columns(2)
                 
                 with col_left:
