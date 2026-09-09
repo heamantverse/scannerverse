@@ -48,8 +48,7 @@ if not st.session_state["authenticated"]:
             if user_id == CORRECT_USER_ID and user_password == CORRECT_PASSWORD:
                 st.session_state["authenticated"] = True
                 st.rerun()
-            else:
-                st.error("❌ ખોટો યુઝર આઈડી અથવા પાસવર્ડ!")
+            else: st.error("❌ ખોટો યુઝર આઈડી અથવા પાસવર્ડ!")
                 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     st.markdown("<h4 style='color: #ff4b4b !important; text-align: center;'>Disclaimer</h4>", unsafe_allow_html=True)
@@ -90,7 +89,7 @@ else:
 
     def extract_scalar(series_or_val):
         if isinstance(series_or_val, (pd.Series, np.ndarray)):
-            return float(series_or_val.iloc[0]) if len(series_or_val) > 0 else 0.0
+            return float(series_or_val.iloc) if len(series_or_val) > 0 else 0.0
         return float(series_or_val)
 
     def analyze_full_matrix(ticker_name):
@@ -124,7 +123,7 @@ else:
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -138,8 +137,7 @@ else:
                 "Avg Vol": avg_vol, "MA50": ma_50, "MA100": ma_100, "MA200": ma_200,
                 "Current Price": current_price, "Calculated Levels": filtered_levels
             }
-        except:
-            return None
+        except: return None
 
     st.markdown("<h3 style='text-align: center; color: #00ffaa;'>← [ SEARCH ] →</h3>", unsafe_allow_html=True)
     user_choice = st.selectbox("", suggestions_pool, index=0, label_visibility="collapsed")
@@ -167,18 +165,13 @@ else:
                 st.dataframe(pd.DataFrame(hloc_data), use_container_width=True, hide_index=True)
                 
                 st.markdown("---")
-                
-                # 🛠️ ૨. ફિક્સ કરેલું નીચેનું મુખ્ય ટેબલ
                 st.markdown("📊 **QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS**")
                 
-                levels_names = []
-                levels_prices = []
+                # 🛠️ એરર ફિક્સ: લૂપ્સ હટાવીને ડાયરેક્ટ સિંગલ-લાઈન ફોર્મેટમાં લિસ્ટ તૈયાર કરવું (Zero Indentation Error)
+                raw_keys = list(res["Calculated Levels"].keys())
+                raw_vals = list(res["Calculated Levels"].values())
                 current_spot = res['Current Price']
                 
-                for name, val in res["Calculated Levels"].items():
-                    distance_pct = ((val - current_spot) / current_spot) * 100
-                    direction_sign = "+" if distance_pct >= 0 else ""
-                    levels_names.append(name)
-                    levels_prices.append(f"₹ {val:,.2f} ({direction_sign}{distance_pct:.2f} %)")
+                l_names = [raw_keys[i] if i < len(raw_keys) else "-" for i in range(5)]
+                l_prices = [f"₹ {raw_vals[i]:,.2f} ({('+' if ((raw_vals[i] - current_spot) / current_spot * 100) >= 0 else '')}{((raw_vals[i] - current_spot) / current_spot * 100):.2f} %)" if i < len(raw_vals) else "-" for i in range(5)]
                 
-                while len(levels_names) < 5:
