@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import requests
 import streamlit as st
 import yfinance as yf
 
@@ -14,7 +13,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# કસ્ટમ CSS થીમ - સ્કેચ મુજબ પ્રીમિયમ લુક આપવા માટે
+# કસ્ટમ CSS થીમ - ડાર્ક મોડ અને કસ્ટમ કન્ટેનર માટે
 st.markdown(
     """
     <style>
@@ -24,8 +23,9 @@ st.markdown(
     .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,170,0.4); }
     .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
-    .matrix-box { background-color: #121620; padding: 20px; border-radius: 8px; border: 1px solid #1f2430; margin-top: 10px; }
-    .ma-box { background-color: #161b22; padding: 15px; border-radius: 6px; border: 1px solid #30363d; text-align: center; margin-bottom: 10px; }
+    .custom-card { background-color: #121620; padding: 20px; border-radius: 8px; border: 1px solid #1f2430; margin-top: 15px; }
+    .level-line { padding: 10px 0; border-bottom: 1px solid #1f2430; font-size: 16px; }
+    .ma-line { padding: 10px; background-color: #161b22; border-radius: 6px; border: 1px solid #30363d; margin-bottom: 10px; font-size: 16px; text-align: center; }
     </style>
     """,
     unsafe_allow_html=True
@@ -83,22 +83,11 @@ else:
         "INFIBEAM", "HUDCO", "SJVN", "NHPC", "GMRINFRA", "IREDA", "YESBANK", "DELHIVERY", "MANAPPURAM"
     ]
 
-    def clean_columns(df):
-        if df is not None and not df.empty:
-            if isinstance(df.columns, pd.MultiIndex): df.columns = df.columns.get_level_values(0)
-            df.columns = [str(c).strip() for c in df.columns]
-        return df
-
-    def extract_scalar(series_or_val):
-        if isinstance(series_or_val, (pd.Series, np.ndarray)):
-            return float(series_or_val.iloc) if len(series_or_val) > 0 else 0.0
-        return float(series_or_val)
-
     def analyze_full_matrix(ticker_name):
         try:
             df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
-            if df_hist.empty or len(df_hist) < 20: return None
-            df_hist = clean_columns(df_hist)
+            if df_hist.empty: return None
+            if isinstance(df_hist.columns, pd.MultiIndex): df_hist.columns = df_hist.columns.get_level_values(0)
             
             ma_50 = float(df_hist["Close"].rolling(50).mean().dropna().iloc[-1])
             ma_100 = float(df_hist["Close"].rolling(100).mean().dropna().iloc[-1])
@@ -109,14 +98,14 @@ else:
             span = year_high - year_low
             
             df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
-            if df_today.empty or len(df_today) < 2: return None
-            df_today = clean_columns(df_today)
+            if df_today.empty: return None
+            if isinstance(df_today.columns, pd.MultiIndex): df_today.columns = df_today.columns.get_level_values(0)
             
             t_row = df_today.iloc[-1]
-            current_price = extract_scalar(t_row["Close"])
-            today_open = extract_scalar(t_row["Open"])
-            today_high = extract_scalar(t_row["High"])
-            today_low = extract_scalar(t_row["Low"])
+            current_price = float(t_row["Close"].iloc[0] if isinstance(t_row["Close"], pd.Series) else t_row["Close"])
+            today_open = float(t_row["Open"].iloc[0] if isinstance(t_row["Open"], pd.Series) else t_row["Open"])
+            today_high = float(t_row["High"].iloc[0] if isinstance(t_row["High"], pd.Series) else t_row["High"])
+            today_low = float(t_row["Low"].iloc[0] if isinstance(t_row["Low"], pd.Series) else t_row["Low"])
             avg_vol = int(df_hist["Volume"].mean())
             
             raw_levels = {
@@ -125,7 +114,7 @@ else:
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            sorted_levels = sorted(raw_levels.items(), key=lambda x: x)
+            sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
                 if current_price >= val: split_idx = i + 1
@@ -149,12 +138,13 @@ else:
         search_query = user_choice.strip().upper()
         resolved_ticker = all_market_indices[search_query] if search_query in all_market_indices else search_query + ".NS"
 
-        with st.spinner("લાયવ માર્કેટ ક્વોન્ટ ડેટા પ્રોસેસ થઈ રહ્યો છે..."):
+        with st.spinner("લાયવ ક્વોન્ટ ડેટા કેલ્ક્યુલેટ થઈ રહ્યો છે..."):
             res = analyze_full_matrix(resolved_ticker)
             
             if res:
                 st.markdown("### - . RESULT . -")
                 
+                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC & Volume)
                 hloc_data = {
                     "SCRIP": [search_query],
                     "TODAYS H": [f"₹ {res['High']:,.2f}"],
@@ -169,8 +159,8 @@ else:
                 st.markdown("---")
                 st.markdown("### 📊 QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS")
                 
+                # 🛠️ અલ્ટીમેટ સોલ્યુશન: કોઈ પણ જટિલ ટેબલ કે લૂપ્સ વગર સાદું લાઇન-બાય-લાઇન કોલમ લેઆઉટ
                 col_left, col_right = st.columns(2)
                 
                 with col_left:
-                    # 🛠️ એરર ફિક્સ: લૂપ્સ સંપૂર્ણપણે હટાવીને ગ્રીડને વન-બાય-વન સિંગલ લાઇન લોજિકમાં લોક કરી દીધી (No Indentation Error)
-                    keys = list(res["Calculated Levels"].keys())
+                    st.markdown("<div class='custom-card'>", unsafe_allow_html=True)
