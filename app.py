@@ -167,11 +167,13 @@ else:
                 st.markdown("---")
                 st.markdown("📊 **QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS**")
                 
-                # 🛠️ એરર ફિક્સ: લૂપ્સ હટાવીને ડાયરેક્ટ સિંગલ-લાઈન ફોર્મેટમાં લિસ્ટ તૈયાર કરવું (Zero Indentation Error)
-                raw_keys = list(res["Calculated Levels"].keys())
-                raw_vals = list(res["Calculated Levels"].values())
-                current_spot = res['Current Price']
+                # 🛠️ અલ્ટીમેટ ડેટા કન્વર્ઝન ફિક્સ: લિસ્ટ ને કમ્પ્લીટલી ફ્લેટ વન-બાય-વન લાઈનમાં ગોઠવવું
+                keys = list(res["Calculated Levels"].keys())
+                vals = list(res["Calculated Levels"].values())
+                curr = res['Current Price']
                 
-                l_names = [raw_keys[i] if i < len(raw_keys) else "-" for i in range(5)]
-                l_prices = [f"₹ {raw_vals[i]:,.2f} ({('+' if ((raw_vals[i] - current_spot) / current_spot * 100) >= 0 else '')}{((raw_vals[i] - current_spot) / current_spot * 100):.2f} %)" if i < len(raw_vals) else "-" for i in range(5)]
+                # ૫ કસ્ટમ રો (Rows) માટે સચોટ નામ અને ટકાવારી અંતર વેરિએબલ્સ
+                n0 = keys[0] if len(keys) > 0 else "-"
+                p0 = f"₹ {vals[0]:,.2f} ({'+' if (vals[0]-curr)>=0 else ''}{((vals[0]-curr)/curr*100):.2f} %)" if len(vals) > 0 else "-"
                 
+                n1 = keys[1] if len(keys) > 1 else "-"
