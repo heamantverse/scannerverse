@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 import yfinance as yf
 
@@ -23,7 +24,6 @@ st.markdown(
     .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,255,170,0.4); }
     .stTextInput>div>div>input { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
     .stSelectbox>div>div>div { background-color: #161b22; color: #ffffff; border: 1px solid #30363d; border-radius: 6px; }
-    .ad-box { background-color: #121620; padding: 15px; border-radius: 8px; border: 1px solid #1f2430; margin-bottom: 20px; }
     </style>
     """,
     unsafe_allow_html=True
@@ -32,13 +32,12 @@ st.markdown(
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
-# --- ૧. લૉગિન પેજ (તમારા બીજા ફોટાની હૂબહૂ ડિઝાઇન મુજબ) ---
+# --- ૧. લૉગિન પેજ ---
 if not st.session_state["authenticated"]:
     st.markdown("<h1 style='font-size: 42px; font-style: italic; letter-spacing: 2px;'>⚡ SUPA TRADE R ⚡</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #8892b0;'>Private Quantitative Trading Software</p>", unsafe_allow_html=True)
     st.markdown("---")
     
-    # લૉગિન બોક્સ સેન્ટર કરવા માટે લેઆઉટ
     _, col_mid, _ = st.columns([1, 1.5, 1])
     with col_mid:
         st.markdown("<h3 style='text-align: left; color: #ffffff !important;'>LOGIN DETAILS</h3>", unsafe_allow_html=True)
@@ -50,18 +49,17 @@ if not st.session_state["authenticated"]:
                 st.session_state["authenticated"] = True
                 st.rerun()
             else:
-                st.error("❌ ખોટો યુઝર આઈડી અથવા પાસવર્ડ! એક્સેસ નકારવામાં આવ્યો છે.")
+                st.error("❌ ખોટો યુઝર આઈડી અથવા પાસવર્ડ!")
                 
     st.markdown("<br><br><hr>", unsafe_allow_html=True)
     st.markdown("<h4 style='color: #ff4b4b !important; text-align: center;'>Disclaimer</h4>", unsafe_allow_html=True)
     st.caption("<p style='text-align: center;'>This is a private proprietary system. Unauthorized access attempts are strictly monitored and logged.</p>", unsafe_allow_html=True)
 
 else:
-    # --- ૨. મુખ્ય ડેશબોર્ડ (તમારા પહેલા ફોટાની હૂબહૂ ડિઝાઇન મુજબ) ---
+    # --- ૨. મુખ્ય ડેશબોર્ડ ---
     st.markdown("<h1>🦅 CREATE THE BEST OPPORTUNITY </h1>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # સ્ટોક્સ અને ઇન્ડાઇસિસનું માસ્ટર પૂલ લિસ્ટ
     all_market_indices = {
         "NIFTY 50": "^NSEI", "NIFTY BANK": "^NSEBANK", "NIFTY FINANCIAL SERVICES": "NIFTY_FIN_SERVICE.NS",
         "NIFTY MIDCAP 50": "^CRSMID", "NIFTY SMALLCAP 50": "^CNXSMALL", "NIFTY IT": "^CNXIT",
@@ -97,21 +95,18 @@ else:
 
     def analyze_full_matrix(ticker_name):
         try:
-            # 📊 ૧ વર્ષનો ડેટા (ફિબોનાચી લેવલ્સ અને મુવિંગ એવરેજ માટે)
             df_hist = yf.download(ticker_name, period="1y", auto_adjust=True, progress=False)
             if df_hist.empty or len(df_hist) < 20: return None
             df_hist = clean_columns(df_hist)
             
-            # મુવિંગ એવરેજ ગણતરી (MA 50, 100, 200)
-            ma_50 = float(df_hist["Close"].rolling(50).mean().iloc[-1])
-            ma_100 = float(df_hist["Close"].rolling(100).mean().iloc[-1])
-            ma_200 = float(df_hist["Close"].rolling(200).mean().iloc[-1])
+            ma_50 = float(df_hist["Close"].rolling(50).mean().dropna().iloc[-1])
+            ma_100 = float(df_hist["Close"].rolling(100).mean().dropna().iloc[-1])
+            ma_200 = float(df_hist["Close"].rolling(200).mean().dropna().iloc[-1])
             
             year_high = float(df_hist["High"].max())
             year_low = float(df_hist["Low"].min())
             span = year_high - year_low
             
-            # આજના લાઈવ OHLC ડેટા માટે
             df_today = yf.download(ticker_name, period="2d", auto_adjust=True, progress=False)
             if df_today.empty or len(df_today) < 2: return None
             df_today = clean_columns(df_today)
@@ -123,14 +118,12 @@ else:
             today_low = extract_scalar(t_row["Low"])
             avg_vol = int(df_hist["Volume"].mean())
             
-            # તમારા કસ્ટમ સરળ નામો
             raw_levels = {
                 "Sky Target 3": year_low + (span * 2.0), "Sky Target 2": year_low + (span * 1.618), "Sky Target 1": year_high,
                 "Center Balance Zone": year_low + (span * 0.618), "Floor Support 1": year_low + (span * 0.272), "Floor Support 2": year_low + (span * 0.236),
                 "Base Zero": year_low, "Floor Support 3": year_low - (span * 0.618), "Floor Support 4": year_low - (span * 1.618), "Macro Boundary Low": year_low - (span * 2.0)
             }
             
-            # ૩ ઉપર અને ૨ નીચે પ્રોક્સિમિટી ફિલ્ટર લોજિક
             sorted_levels = sorted(raw_levels.items(), key=lambda x: x[1])
             split_idx = 0
             for i, (name, val) in enumerate(sorted_levels):
@@ -141,13 +134,13 @@ else:
             filtered_levels = dict(sorted_levels[start_idx:end_idx])
             
             return {
-                "Open": round(today_open, 2), "High": round(today_high, 2), "Low": round(today_low, 2), "Close": round(current_price, 2),
-                "Avg Vol": avg_vol, "MA50": round(ma_50, 2), "MA100": round(ma_100, 2), "MA200": round(ma_200, 2),
-                "Current Price": round(current_price, 2), "Calculated Levels": filtered_levels
+                "Open": today_open, "High": today_high, "Low": today_low, "Close": current_price,
+                "Avg Vol": avg_vol, "MA50": ma_50, "MA100": ma_100, "MA200": ma_200,
+                "Current Price": current_price, "Calculated Levels": filtered_levels
             }
-        except: return None
+        except Exception as e:
+            return None
 
-    # 🔍 સર્ચ બોક્સ સેટઅપ (સ્કેચમાં બતાવ્યા મુજબ વચ્ચે)
     st.markdown("<h3 style='text-align: center; color: #00ffaa;'>← [ SEARCH ] →</h3>", unsafe_allow_html=True)
     user_choice = st.selectbox("", suggestions_pool, index=0, label_visibility="collapsed")
     st.markdown("<br>", unsafe_allow_html=True)
@@ -162,15 +155,28 @@ else:
             if res:
                 st.markdown("### - . RESULT . -")
                 
-                # --- સ્કેચ મુજબનું મુખ્ય કોષ્ટક (Table) ---
-                # રો ૧: TODAYS HLOC અને Avg Vol
+                # ૧. ઉપરનું નાનું કોષ્ટક (HLOC)
                 hloc_data = {
                     "SCRIP": [search_query],
-                    "TODAYS H": [f"₹ {res['High']:,}"],
-                    "TODAYS L": [f"₹ {res['Low']:,}"],
-                    "TODAYS O": [f"₹ {res['Open']:,}"],
-                    "TODAYS C": [f"₹ {res['Close']:,}"],
+                    "TODAYS H": [f"₹ {res['High']:,.2f}"],
+                    "TODAYS L": [f"₹ {res['Low']:,.2f}"],
+                    "TODAYS O": [f"₹ {res['Open']:,.2f}"],
+                    "TODAYS C": [f"₹ {res['Close']:,.2f}"],
                     "Avg Vol": [f"{res['Avg Vol']:,}"]
                 }
                 st.markdown("**TODAYS MARKET FEED & VOLUME**")
                 st.dataframe(pd.DataFrame(hloc_data), use_container_width=True, hide_index=True)
+                
+                st.markdown("---")
+                
+                # 🛠️ ૨. નીચેનું મુખ્ય ટેબલ (તમારા સ્કેચની પર્ફેક્ટ રો અને કોલમ ડિઝાઇન મુજબ)
+                st.markdown("📊 **QUANT SYMMETRICAL MATRIX & MOVING AVERAGES ANALYSIS**")
+                
+                # ફિલ્ટર કરેલા સિક્રેટ ૫ લેવલ્સની યાદી બનાવવી
+                levels_names = []
+                levels_prices = []
+                current_spot = res['Current Price']
+                
+                for name, val in res["Calculated Levels"].items():
+                    distance_pct = ((val - current_spot) / current_spot) * 100
+                    direction_sign = "+" if distance_pct >= 0 else ""
